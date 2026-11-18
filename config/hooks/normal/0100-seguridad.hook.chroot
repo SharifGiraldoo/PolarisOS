@@ -1,0 +1,67 @@
+#!/bin/sh
+# =============================================================================
+# PolarisOS — endurecimiento de seguridad
+# Se ejecuta DENTRO del sistema (chroot) durante la construcción.
+# =============================================================================
+set -e
+
+echo "[PolarisOS] Aplicando configuración de seguridad..."
+
+# --- 1. Firewall activo por defecto -----------------------------------------
+# Política de UFW: bloquear todo lo entrante, permitir lo saliente.
+# `ufw enable` no funciona dentro de un chroot, así que se activa en su
+# archivo de configuración y se aplica en el primer arranque.
+if [ -f /etc/ufw/ufw.conf ]; then
+	sed -i 's/^ENABLED=no/ENABLED=yes/' /etc/ufw/ufw.conf
+fi
+if [ -f /etc/default/ufw ]; then
+	sed -i 's/^DEFAULT_INPUT_POLICY=.*/DEFAULT_INPUT_POLICY="DROP"/'   /etc/default/ufw
+	sed -i 's/^DEFAULT_OUTPUT_POLICY=.*/DEFAULT_OUTPUT_POLICY="ACCEPT"/' /etc/default/ufw
+fi
+systemctl enable ufw.service
+
+# --- 2. Actualizaciones de seguridad automáticas -----------------------------
+cat > /etc/apt/apt.conf.d/20auto-upgrades <<'EOF'
+// PolarisOS: buscar e instalar actualizaciones de seguridad cada día
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+APT::Periodic::AutocleanInterval "7";
+EOF
+
+# --- 3. Endurecimiento del kernel (sysctl) -----------------------------------
+cat > /etc/sysctl.d/90-polaris-seguridad.conf <<'EOF'
+# PolarisOS — endurecimiento del kernel
+# Oculta direcciones del kernel y el registro dmesg a usuarios sin privilegios
+kernel.kptr_restrict = 2
+kernel.dmesg_restrict = 1
+# Restringe ptrace a procesos padre (dificulta robar datos de otros procesos)
+kernel.yama.ptrace_scope = 1
+# Protecciones de red
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.default.rp_filter = 1
+net.ipv4.tcp_syncookies = 1
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+net.ipv6.conf.all.accept_redirects = 0
+net.ipv6.conf.default.accept_redirects = 0
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv6.conf.all.accept_source_route = 0
+# Protecciones de enlaces y archivos en directorios compartidos
+fs.protected_symlinks = 1
+fs.protected_hardlinks = 1
+fs.protected_fifos = 2
+fs.protected_regular = 2
+EOF
+
+# --- 4. AppArmor activo ------------------------------------------------------
+# Debian ya lo habilita en el kernel; nos aseguramos de que el servicio cargue.
+systemctl enable apparmor.service
+
+# --- 5. Contraseñas: longitud mínima de 8 caracteres en el instalador -------
+CALA_USERS=/etc/calamares/modules/users.conf
+if [ -f "$CALA_USERS" ]; then
+	sed -i 's/^\(\s*minLength:\s*\)-1/\18/' "$CALA_USERS"
+fi
+
+echo "[PolarisOS] Seguridad aplicada."
