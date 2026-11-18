@@ -1,0 +1,11 @@
+PRETTY_NAME="PolarisOS 0.2"
+NAME="PolarisOS"
+VERSION_ID="0.2"
+VERSION="0.2"
+VERSION_CODENAME=trixie
+ID=polarisos
+ID_LIKE=debian
+HOME_URL="https://github.com/SharifGiraldoo/PolarisOS"
+SUPPORT_URL="https://github.com/SharifGiraldoo/PolarisOS/issues"
+BUG_REPORT_URL="https://github.com/SharifGiraldoo/PolarisOS/issues"
+LOGO=polarisos-logo
