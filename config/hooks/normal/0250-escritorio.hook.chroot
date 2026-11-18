@@ -1,0 +1,61 @@
+#!/bin/sh
+# =============================================================================
+# PolarisOS — arranque gráfico (Plymouth) y ajustes del escritorio
+# =============================================================================
+set -e
+
+echo "[PolarisOS] Configurando arranque gráfico y escritorio..."
+
+# --- 1. Tema de Plymouth "polaris" ---------------------------------------------
+# Se basa en el tema "spinner" de Debian (animación de carga) y le añade la
+# marca de PolarisOS como marca de agua. live-build regenera el initramfs
+# después de los hooks, así que el tema queda incluido en el arranque.
+TEMAS=/usr/share/plymouth/themes
+if [ -d "$TEMAS/spinner" ]; then
+	mkdir -p "$TEMAS/polaris"
+	cp -a "$TEMAS/spinner/." "$TEMAS/polaris/"
+	rm -f "$TEMAS/polaris/spinner.plymouth"
+	cp /usr/share/polarisos/polarisos-plymouth.png "$TEMAS/polaris/watermark.png"
+
+	cat > "$TEMAS/polaris/polaris.plymouth" <<'EOF'
+[Plymouth Theme]
+Name=PolarisOS
+Description=PolarisOS boot splash
+ModuleName=two-step
+
+[two-step]
+Font=DejaVu Sans 12
+TitleFont=DejaVu Sans Light 30
+ImageDir=/usr/share/plymouth/themes/polaris
+DialogHorizontalAlignment=.5
+DialogVerticalAlignment=.382
+TitleHorizontalAlignment=.5
+TitleVerticalAlignment=.382
+HorizontalAlignment=.5
+VerticalAlignment=.7
+WatermarkHorizontalAlignment=.5
+WatermarkVerticalAlignment=.45
+Transition=none
+TransitionDuration=0.0
+BackgroundStartColor=0x060c26
+BackgroundEndColor=0x0e2e54
+EOF
+	if command -v plymouth-set-default-theme >/dev/null 2>&1; then
+		plymouth-set-default-theme polaris
+	else
+		# Respaldo: es lo mismo que hace plymouth-set-default-theme
+		mkdir -p /etc/plymouth
+		printf '[Daemon]\nTheme=polaris\n' > /etc/plymouth/plymouthd.conf
+	fi
+	echo "[PolarisOS] Plymouth: tema $(sed -n 's/^Theme=//p' /etc/plymouth/plymouthd.conf)"
+else
+	echo "[PolarisOS] AVISO: no se encontró el tema spinner de Plymouth" >&2
+fi
+
+# --- 2. Applet de Bluetooth solo si hay hardware Bluetooth -----------------------
+APPLET=/etc/xdg/autostart/blueman.desktop
+if [ -f "$APPLET" ]; then
+	sed -i 's|^Exec=.*|Exec=/usr/bin/polaris-bluetooth-applet|' "$APPLET"
+fi
+
+echo "[PolarisOS] Arranque gráfico y escritorio configurados."
