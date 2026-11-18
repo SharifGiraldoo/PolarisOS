@@ -1,0 +1,9 @@
+files/os-release                     usr/lib/
+files/polarisos-fondo.png            usr/share/backgrounds/polarisos/
+files/polarisos-logo.png             usr/share/pixmaps/
+files/polarisos-plymouth.png         usr/share/polarisos/
+files/50_polarisos.conf              usr/share/lightdm/lightdm-gtk-greeter.conf.d/
+files/polaris-first-login            usr/bin/
+files/polaris-check                  usr/bin/
+files/polaris-bluetooth-applet       usr/bin/
+files/polaris-first-login.desktop    etc/xdg/autostart/
