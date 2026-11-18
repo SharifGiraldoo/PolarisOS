@@ -11,6 +11,10 @@
   </a>
 </p>
 
+<p align="center">
+  <img src="docs/img/boot-menu-uefi.png" width="640" alt="Menú de arranque de PolarisOS en UEFI">
+</p>
+
 ---
 
 ## Características
