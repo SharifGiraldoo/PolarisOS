@@ -1,0 +1,2 @@
+# Necesario si el usuario elige cifrar el disco (LUKS) en Calamares
+cryptsetup-initramfs
