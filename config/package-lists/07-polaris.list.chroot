@@ -1,0 +1,6 @@
+# -----------------------------------------------------------------------------
+# Paquetes propios de PolarisOS (se construyen desde packages/ y live-build los
+# toma de config/packages.chroot/). live-build solo los pone a disposición en
+# un repositorio local: hay que listarlos aquí para que se instalen.
+# -----------------------------------------------------------------------------
+polaris-branding
