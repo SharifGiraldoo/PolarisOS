@@ -1,0 +1,9 @@
+# -----------------------------------------------------------------------------
+# Paquetes que se copian al "pool" de la ISO (no se instalan en la sesión live).
+# Calamares los instala SIN internet en el disco destino.
+#
+# Cada archivo .list.binary es una transacción de apt independiente: por eso
+# GRUB para BIOS y GRUB para UEFI van en archivos separados (entran en
+# conflicto si se piden juntos).
+# -----------------------------------------------------------------------------
+grub-pc
