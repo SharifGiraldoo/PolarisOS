@@ -1,0 +1,28 @@
+# -----------------------------------------------------------------------------
+# Aplicaciones esenciales (solo lo necesario; el usuario instala el resto)
+# -----------------------------------------------------------------------------
+
+# Navegador (versión ESR: recibe parches de seguridad de Debian)
+firefox-esr
+
+# Editor de texto, visor de imágenes, PDF y archivos comprimidos
+mousepad
+ristretto
+atril
+xarchiver
+7zip
+
+# Multimedia: reproductor y códecs
+parole
+gstreamer1.0-plugins-good
+gstreamer1.0-plugins-bad
+gstreamer1.0-plugins-ugly
+gstreamer1.0-libav
+
+# Utilidades
+galculator
+gnome-disk-utility
+gparted
+
+# Gestión de paquetes gráfica (requisito: poder instalar paquetes)
+synaptic
