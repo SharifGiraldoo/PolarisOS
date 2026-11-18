@@ -1,0 +1,5 @@
+# GRUB para UEFI, con soporte de Secure Boot (shim y GRUB firmados)
+grub-efi
+grub-efi-amd64
+grub-efi-amd64-signed
+shim-signed
