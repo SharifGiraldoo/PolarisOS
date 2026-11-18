@@ -1,0 +1,14 @@
+#!/bin/sh
+# Ejecuta la construcción completa y guarda el registro en build.log.
+# Conserva el código de salida de lb build (un simple `| tee` lo ocultaría).
+set -e
+
+rm -f .build-status
+( lb build noauto "${@}" 2>&1 || echo $? > .build-status ) | tee build.log
+
+if [ -f .build-status ]; then
+	estado=$(cat .build-status)
+	rm -f .build-status
+	echo "ERROR: lb build falló con código ${estado}. Revisa build.log" >&2
+	exit "${estado}"
+fi
