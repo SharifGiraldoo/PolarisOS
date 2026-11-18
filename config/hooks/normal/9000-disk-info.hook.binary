@@ -1,0 +1,14 @@
+#!/bin/sh
+# =============================================================================
+# PolarisOS — identifica el medio de instalación (.disk/info) con el nombre de
+# PolarisOS en lugar de "Debian GNU/Linux". Se ejecuta dentro de binary/.
+# =============================================================================
+set -e
+
+# shellcheck disable=SC1091
+VERSION_ID="$(. ../chroot/etc/os-release && echo "${VERSION_ID}")"
+FECHA="$(date -u +%Y%m%d)"
+
+mkdir -p .disk
+echo "PolarisOS ${VERSION_ID} \"Debian 13 trixie based\" - amd64 LIVE Binary ${FECHA}" > .disk/info
+echo "[PolarisOS] .disk/info: $(cat .disk/info)"
