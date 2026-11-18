@@ -1,0 +1,48 @@
+# -----------------------------------------------------------------------------
+# Sistema base
+# Con --apt-recommends false, lo que no esté aquí NO se instala.
+# -----------------------------------------------------------------------------
+
+# Kernel firmado de Debian (necesario para Secure Boot)
+linux-image-amd64
+
+# Modo live
+live-boot
+live-config
+live-config-systemd
+user-setup
+sudo
+
+# Idioma, teclado y zona horaria
+locales
+keyboard-configuration
+console-setup
+tzdata
+
+# Hora sincronizada por red (necesaria para TLS y actualizaciones)
+systemd-timesyncd
+
+# Utilidades básicas del sistema
+bash-completion
+htop
+man-db
+manpages
+ca-certificates
+curl
+less
+nano
+wget
+xdg-user-dirs
+xdg-utils
+zstd
+
+# Red
+network-manager
+
+# Sistema de archivos y discos
+dosfstools
+exfatprogs
+ntfs-3g
+udisks2
+gvfs
+gvfs-backends
