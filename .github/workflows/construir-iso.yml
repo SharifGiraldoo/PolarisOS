@@ -1,0 +1,127 @@
+# =============================================================================
+# PolarisOS — integración continua
+#
+#  - En cada push y pull request: revisa los scripts (shellcheck).
+#  - En cada etiqueta vX.Y.Z (o manualmente): construye la ISO en un
+#    contenedor Debian 13 y, si es una etiqueta, publica un Release con la
+#    ISO y SHA256SUMS. Luego firmas SHA256SUMS en tu equipo con
+#    scripts/firmar-release.sh (la llave privada nunca sube a GitHub).
+# =============================================================================
+name: Construir ISO
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  revisar:
+    name: Revisar scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Shellcheck
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q shellcheck
+          shellcheck -x auto/* scripts/*.sh \
+            config/hooks/normal/*.hook.* \
+            packages/polaris-branding/files/polaris-first-login \
+            packages/polaris-branding/files/polaris-check \
+            packages/polaris-branding/files/polaris-bluetooth-applet \
+            packages/polaris-branding/debian/preinst \
+            packages/polaris-branding/debian/postrm
+
+  construir:
+    name: Construir ISO
+    needs: revisar
+    # Solo en etiquetas de versión o al lanzarlo a mano (tarda ~40 min)
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Comprobar que la versión coincide en todo el proyecto
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          version="$(cat VERSION)"
+          corta="$(echo "$version" | cut -d. -f1,2)"
+          test "${GITHUB_REF_NAME#v}" = "$version" \
+            || { echo "::error::La etiqueta $GITHUB_REF_NAME no coincide con VERSION ($version)"; exit 1; }
+          grep -q "^VERSION_ID=\"$corta\"" packages/polaris-branding/files/os-release \
+            || { echo "::error::os-release no tiene VERSION_ID=\"$corta\""; exit 1; }
+          grep -q "^polaris-branding ($version)" packages/polaris-branding/debian/changelog \
+            || { echo "::error::debian/changelog no tiene la versión $version"; exit 1; }
+          grep -q "version: *$version" config/includes.chroot/etc/calamares/branding/polaris/branding.desc \
+            || { echo "::error::branding.desc no tiene la versión $version"; exit 1; }
+
+      - name: Liberar espacio en disco
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          df -h /
+
+      - name: Calcular versión
+        id: version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "valor=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "valor=0.0.0-dev.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Construir en contenedor Debian 13
+        run: |
+          docker run --rm --privileged \
+            -v "$PWD":/fuente \
+            -e POLARIS_VERSION="${{ steps.version.outputs.valor }}" \
+            -e POLARIS_TRABAJO=/trabajo \
+            -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
+            debian:trixie bash /fuente/scripts/ci-build.sh
+
+      - name: Verificar tamaño (GitHub limita los archivos de un Release a 2 GiB)
+        run: |
+          tam=$(stat -c %s salida/*.iso)
+          echo "Tamaño de la ISO: $((tam / 1024 / 1024)) MB"
+          test "$tam" -lt 2147483648
+
+      - name: Guardar ISO como artefacto (7 días)
+        uses: actions/upload-artifact@v4
+        with:
+          name: polarisos-${{ steps.version.outputs.valor }}
+          path: |
+            salida/*.iso
+            salida/SHA256SUMS
+            salida/*.log
+          retention-days: 7
+
+      - name: Publicar Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: PolarisOS ${{ steps.version.outputs.valor }}
+          draft: false
+          prerelease: ${{ startsWith(steps.version.outputs.valor, '0.') }}
+          files: |
+            salida/*.iso
+            salida/SHA256SUMS
+          body: |
+            ## PolarisOS ${{ steps.version.outputs.valor }}
+
+            **Requisitos mínimos:** procesador de 64 bits, 2 GB de RAM, 20 GB de disco.
+
+            ### Verificar la descarga
+            ```bash
+            sha256sum -c SHA256SUMS --ignore-missing
+            gpg --verify SHA256SUMS.asc SHA256SUMS
+            ```
+
+            Consulta el [CHANGELOG](${{ github.server_url }}/${{ github.repository }}/blob/main/CHANGELOG.md) para ver los cambios.
