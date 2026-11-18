@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# =============================================================================
+# PolarisOS — checks the system requirements (live or installed system).
+# Run it right after logging in, without opening other applications:
+#
+#   polaris-check
+#
+# Reports idle RAM, boot time, firewall, AppArmor, automatic updates,
+# Secure Boot, zram and earlyoom.
+# =============================================================================
+set -uo pipefail
+
+# PolarisOS requirement: at most 2 GB of RAM. Idle target leaves at least
+# 1 GB free for the browser and applications on a 2 GB computer.
+TARGET_RAM_MB=1024
+ok()   { printf '  \033[1;32m✔\033[0m %s\n' "$*"; }
+bad()  { printf '  \033[1;31m✘\033[0m %s\n' "$*"; }
+info() { printf '  • %s\n' "$*"; }
+
+echo "== System =="
+info "$(. /etc/os-release && echo "$PRETTY_NAME") — kernel $(uname -r)"
+if grep -qw 'boot=live' /proc/cmdline 2>/dev/null; then
+	info "Live session (RAM use is higher than on an installed system)"
+fi
+
+echo "== Memory (idle target: ≤ ${TARGET_RAM_MB} MB) =="
+used=$(free -m | awk '/^Mem:/ { print $3 }')
+total=$(free -m | awk '/^Mem:/ { print $2 }')
+available=$(free -m | awk '/^Mem:/ { print $7 }')
+if (( used <= TARGET_RAM_MB )); then
+	ok "RAM used: ${used} MB of ${total} MB (${available} MB available)"
+else
+	bad "RAM used: ${used} MB of ${total} MB (above target)"
+fi
+info "Processes using the most memory:"
+ps -eo rss=,comm= --sort=-rss | head -n 8 | awk '{ printf "      %6.0f MB  %s\n", $1/1024, $2 }'
+
+echo "== Boot =="
+info "$(systemd-analyze 2>/dev/null | head -n 1)"
+info "Slowest services:"
+systemd-analyze blame 2>/dev/null | head -n 5 | sed 's/^/      /'
+
+echo "== Security =="
+if sudo -n true 2>/dev/null || [[ $EUID -eq 0 ]]; then
+	if sudo ufw status | grep -q 'Status: active'; then
+		ok "Firewall (UFW) active"
+	else
+		bad "Firewall (UFW) inactive"
+	fi
+elif systemctl is-enabled --quiet ufw; then
+	ok "UFW service enabled (run with sudo to see its status)"
+else
+	bad "UFW service disabled"
+fi
+if [[ "$(cat /sys/module/apparmor/parameters/enabled 2>/dev/null)" == "Y" ]]; then
+	ok "AppArmor enabled"
+else
+	bad "AppArmor disabled"
+fi
+if [[ -f /etc/apt/apt.conf.d/20auto-upgrades ]] && grep -q 'Unattended-Upgrade "1"' /etc/apt/apt.conf.d/20auto-upgrades; then
+	ok "Automatic security updates enabled"
+else
+	bad "Automatic security updates disabled"
+fi
+if timedatectl show -p NTPSynchronized --value 2>/dev/null | grep -q yes; then
+	ok "Clock synchronised over the network"
+else
+	info "Clock not synchronised yet (needs Internet access)"
+fi
+if [[ -d /sys/firmware/efi ]]; then
+	sb=$(od -An -t u1 /sys/firmware/efi/efivars/SecureBoot-* 2>/dev/null | awk '{ print $NF }')
+	if [[ "$sb" == "1" ]]; then
+		ok "Booted with UEFI and Secure Boot ENABLED"
+	else
+		info "Booted with UEFI (Secure Boot disabled)"
+	fi
+else
+	info "Booted in BIOS (legacy) mode"
+fi
+
+echo "== Performance =="
+if swapon --show=NAME --noheadings 2>/dev/null | grep -q zram; then
+	ok "zram active: $(swapon --show=NAME,SIZE --noheadings | grep zram | tr -s ' ')"
+else
+	bad "zram not active"
+fi
+if systemctl is-active --quiet earlyoom; then
+	ok "earlyoom active"
+else
+	bad "earlyoom inactive"
+fi
