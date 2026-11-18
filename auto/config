@@ -1,0 +1,76 @@
+#!/bin/sh
+# =============================================================================
+# PolarisOS — configuración de live-build
+#
+# Este archivo se ejecuta con `lb config`. Al estar en Git, cualquiera puede
+# reproducir exactamente la misma imagen.
+#
+# Variables que puedes sobrescribir al invocar:
+#   POLARIS_VERSION   versión que aparece en el nombre y volumen de la ISO
+#   POLARIS_MIRROR    espejo de Debian (por defecto deb.debian.org)
+# =============================================================================
+set -e
+
+POLARIS_VERSION="${POLARIS_VERSION:-$(cat VERSION 2>/dev/null || echo 0.0.0)}"
+POLARIS_MIRROR="${POLARIS_MIRROR:-http://deb.debian.org/debian/}"
+
+# Parámetros comunes de la sesión live (inglés por defecto)
+LIVE_COMUN="boot=live components username=polaris user-fullname=PolarisOS hostname=polarisos locales=en_US.UTF-8 keyboard-layouts=us timezone=Etc/UTC"
+
+lb config noauto \
+	--mode debian \
+	--distribution trixie \
+	--archive-areas "main contrib non-free non-free-firmware" \
+	--mirror-bootstrap "${POLARIS_MIRROR}" \
+	--mirror-binary "${POLARIS_MIRROR}" \
+	--security true \
+	--updates true \
+	--apt-recommends false \
+	--binary-images iso-hybrid \
+	--bootloaders "grub-pc,grub-efi" \
+	--uefi-secure-boot enable \
+	--memtest memtest86+ \
+	--checksums sha256 \
+	--debian-installer none \
+	--firmware-chroot true \
+	--iso-application "PolarisOS" \
+	--iso-publisher "PolarisOS; https://github.com/SharifGiraldoo/PolarisOS" \
+	--iso-volume "PolarisOS ${POLARIS_VERSION}" \
+	--image-name "polarisos-${POLARIS_VERSION}" \
+	--bootappend-live "${LIVE_COMUN} quiet splash" \
+	--bootappend-live-failsafe "${LIVE_COMUN} nomodeset noapic noapm nodma nomce nosmp nosplash" \
+	"${@}"
+
+# -----------------------------------------------------------------------------
+# Notas sobre las opciones más importantes
+#
+# --apt-recommends false
+#     Lo más importante para mantener la distro ligera: no se instalan los
+#     paquetes "recomendados". A cambio, TODO lo necesario debe declararse en
+#     config/package-lists/ (por ejemplo user-setup y sudo para el modo live).
+#
+# --binary-images iso-hybrid
+#     Formato híbrido: la misma imagen arranca desde DVD y grabada en USB.
+#     El archivo final se renombra a polarisos-<versión>-amd64.iso
+#     (ver scripts/ci-build.sh).
+#
+# --bootloaders "grub-pc,grub-efi"
+#     GRUB tanto en BIOS como en UEFI, así el menú de arranque es el mismo en
+#     ambos modos. El menú está en config/bootloaders/grub-pc/.
+#
+# --uefi-secure-boot enable
+#     Usa shim y GRUB firmados por Debian para que la ISO arranque en equipos
+#     con Secure Boot activado. Por eso NO compilamos un kernel propio.
+#
+# --memtest memtest86+ / --checksums sha256
+#     Agregan al menú "Memory test" y "Check disc for defects" (verifica las
+#     sumas sha256sum.txt que quedan dentro de la ISO).
+#
+# --debian-installer none
+#     El instalador es Calamares (gráfico), no debian-installer.
+#
+# LIVE_COMUN
+#     Parámetros de live-config: usuario "polaris", inglés (EE. UU.), teclado
+#     estadounidense y hora UTC. Otros idiomas se eligen en el menú de arranque
+#     ("Languages") o en el instalador.
+# -----------------------------------------------------------------------------
