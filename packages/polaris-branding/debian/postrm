@@ -1,0 +1,14 @@
+#!/bin/sh
+# Si se desinstala el paquete, devuelve el os-release original de Debian.
+set -e
+
+#DEBHELPER#
+
+case "$1" in
+	remove|abort-install|disappear)
+		dpkg-divert --package polaris-branding --remove --rename \
+			--divert /usr/lib/os-release.debian /usr/lib/os-release
+		;;
+esac
+
+exit 0

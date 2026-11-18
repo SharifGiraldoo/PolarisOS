@@ -1,0 +1,14 @@
+#!/bin/sh
+# Desvía el os-release de Debian ANTES de instalar el nuestro.
+# Así, cuando base-files se actualice, su versión irá a os-release.debian
+# y la de PolarisOS se conserva.
+set -e
+
+if [ "$1" = "install" ] || [ "$1" = "upgrade" ]; then
+	dpkg-divert --package polaris-branding --add --rename \
+		--divert /usr/lib/os-release.debian /usr/lib/os-release
+fi
+
+#DEBHELPER#
+
+exit 0
