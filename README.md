@@ -23,6 +23,17 @@
 
 ---
 
+## Contenido
+
+- [¿Por qué PolarisOS?](#por-qué-polarisos)
+- [Free as in Freedom](#free-as-in-freedom)
+- [Linux en pocas palabras](#linux-en-pocas-palabras)
+- [Características](#características)
+- [Probar PolarisOS sin instalar](#probar-polarisos-sin-instalar)
+- [Construir desde el código](#construir-desde-el-código)
+- [Contribuir](#contribuir)
+- [Licencia](#licencia)
+
 ## ¿Por qué PolarisOS?
 
 PolarisOS nace como un proyecto personal **por amor al software libre**: la
@@ -138,6 +149,20 @@ Abre la terminal y prueba:
 - 2 GB de RAM
 - 20 GB de disco para instalar
 
+## Probar PolarisOS sin instalar
+
+1. Descarga la ISO desde **[Releases](https://github.com/SharifGiraldoo/PolarisOS/releases)**.
+2. Grábala en una memoria USB de 4 GB o más con
+   [balenaEtcher](https://etcher.balena.io/), [Ventoy](https://www.ventoy.net/)
+   o, en Linux, con GNOME Disks ("Restaurar imagen de disco").
+3. Reinicia el computador y abre el menú de arranque (normalmente **F12**,
+   **F11**, **F8** o **Esc**). Elige la USB.
+4. En el menú de PolarisOS elige **Start PolarisOS**. Para otro idioma, entra a
+   **Languages**.
+5. Si te gusta, haz doble clic en **Install PolarisOS** en el escritorio.
+
+La sesión live no modifica tu disco: puedes probar todo sin riesgo.
+
 ## Descargar
 
 Descarga la última ISO desde **[Releases](https://github.com/SharifGiraldoo/PolarisOS/releases)** y verifícala:
@@ -177,7 +202,10 @@ docs/                     documentación
 
 ## Contribuir
 
-Lee [CONTRIBUTING.md](CONTRIBUTING.md). Para reportar vulnerabilidades, consulta [SECURITY.md](SECURITY.md).
+¡Toda ayuda suma! Puedes reportar errores, probar PolarisOS en tu hardware,
+mejorar la documentación o proponer cambios. Lee [CONTRIBUTING.md](CONTRIBUTING.md):
+los commits siguen [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/).
+Para reportar vulnerabilidades, consulta [SECURITY.md](SECURITY.md).
 
 ## Licencia
 
