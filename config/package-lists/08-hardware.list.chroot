@@ -1,0 +1,22 @@
+# -----------------------------------------------------------------------------
+# Hardware y periféricos. Todos estos servicios arrancan SOLO cuando se
+# necesitan (por socket o si existe el hardware), así que no aumentan la RAM
+# en reposo.
+# -----------------------------------------------------------------------------
+
+# Impresión (CUPS se activa por socket al imprimir)
+cups
+cups-client
+system-config-printer
+printer-driver-hpcups
+
+# Bluetooth (bluetooth.service solo arranca si hay adaptador; el applet
+# se lanza con polaris-bluetooth-applet solo si existe hardware)
+bluez
+blueman
+
+# Integración con máquinas virtuales (cada servicio solo arranca dentro de
+# su virtualizador: QEMU/KVM con SPICE y VMware)
+spice-vdagent
+open-vm-tools
+open-vm-tools-desktop
