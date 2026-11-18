@@ -1,0 +1,10 @@
+#!/bin/sh
+# =============================================================================
+# PolarisOS — starts the Bluetooth applet only when a Bluetooth adapter exists.
+# Saves memory on computers and virtual machines without Bluetooth.
+# Used by /etc/xdg/autostart/blueman.desktop.
+# =============================================================================
+if [ -n "$(ls -A /sys/class/bluetooth 2>/dev/null)" ]; then
+	exec blueman-applet "$@"
+fi
+exit 0
