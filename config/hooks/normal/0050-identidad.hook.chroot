@@ -1,0 +1,32 @@
+#!/bin/sh
+# =============================================================================
+# PolarisOS — identidad del sistema (/etc/os-release, /etc/issue, /etc/motd)
+#
+# live-build copia el os-release de Debian a /etc/os-release como archivo
+# normal (para añadir IMAGE_ID=live), así que el os-release de PolarisOS que
+# instala polaris-branding en /usr/lib/os-release quedaba oculto.
+# Restauramos el enlace estándar de Debian: /etc/os-release -> ../usr/lib/os-release
+# =============================================================================
+set -e
+
+if ! grep -q '^ID=polarisos' /usr/lib/os-release 2>/dev/null; then
+	echo "[PolarisOS] ERROR: /usr/lib/os-release no es de PolarisOS" >&2
+	exit 1
+fi
+
+ln -sf ../usr/lib/os-release /etc/os-release
+# shellcheck disable=SC1091
+. /etc/os-release
+echo "[PolarisOS] Identidad: ${PRETTY_NAME}"
+
+# Pantalla de inicio de sesión en consola (tty)
+printf '%s \\n \\l\n\n' "${PRETTY_NAME}" > /etc/issue
+printf '%s\n' "${PRETTY_NAME}" > /etc/issue.net
+
+# Mensaje al entrar por terminal de texto o SSH
+cat > /etc/motd <<EOF
+
+${PRETTY_NAME} — lightweight and secure Linux, based on Debian.
+Documentation and support: ${HOME_URL}
+
+EOF
