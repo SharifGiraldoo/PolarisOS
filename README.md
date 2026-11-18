@@ -23,6 +23,51 @@
 
 ---
 
+## ¿Por qué PolarisOS?
+
+PolarisOS nace como un proyecto personal **por amor al software libre**: la
+convicción de que el software que usamos todos los días debería poder
+estudiarse, compartirse y mejorarse en comunidad.
+
+**Polaris** es la Estrella Polar, la que durante siglos guió a navegantes y
+viajeros porque siempre está en el mismo lugar del cielo. El proyecto toma ese
+nombre con una idea sencilla: ser un punto de referencia estable y confiable
+para quien quiere empezar en Linux o darle una segunda vida a un computador que
+otros sistemas ya dejaron atrás.
+
+Sus principios:
+
+- **Libertad:** todo el código está a la vista y bajo la licencia GPL-3.0.
+- **Ligereza:** funciona en equipos con 2 GB de RAM, sin sacrificar un
+  escritorio completo.
+- **Seguridad por defecto:** protegido desde el primer arranque, sin pasos
+  extra para el usuario.
+- **Aprender construyendo:** cada decisión técnica está documentada para que
+  cualquiera pueda entender cómo se hace una distribución Linux.
+
+## Free as in Freedom
+
+En inglés, *free* significa tanto "gratis" como "libre". La frase **"Free as
+in Freedom"** aclara de cuál se trata: el software libre se refiere a la
+**libertad** de los usuarios, no al precio.
+
+Un programa es software libre cuando respeta cuatro libertades:
+
+| Libertad | Qué te permite |
+|---|---|
+| **0** | Usar el programa con cualquier propósito |
+| **1** | Estudiar cómo funciona y adaptarlo a tus necesidades (para eso necesitas el código fuente) |
+| **2** | Compartir copias para ayudar a otras personas |
+| **3** | Mejorar el programa y publicar tus mejoras para que toda la comunidad se beneficie |
+
+PolarisOS protege esas libertades de dos maneras:
+
+- Su código se publica bajo la **GPL-3.0**, una licencia *copyleft*: quien
+  distribuya una versión modificada debe compartirla con las mismas libertades.
+- Se construye sobre **Debian**, uno de los proyectos de software libre más
+  antiguos del mundo, mantenido por una comunidad de voluntarios y guiado por
+  su propio compromiso con el software libre.
+
 ## Características
 
 | Requisito | Cómo lo cumple PolarisOS |
