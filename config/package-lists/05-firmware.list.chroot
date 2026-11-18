@@ -1,0 +1,12 @@
+# -----------------------------------------------------------------------------
+# Firmware: clave para el requisito "funcionar en cualquier dispositivo".
+# Cubre la mayoría de tarjetas Wi-Fi, gráficas y Bluetooth comunes.
+# -----------------------------------------------------------------------------
+firmware-linux-free
+firmware-linux-nonfree
+firmware-misc-nonfree
+firmware-iwlwifi
+firmware-realtek
+firmware-atheros
+firmware-brcm80211
+firmware-sof-signed
