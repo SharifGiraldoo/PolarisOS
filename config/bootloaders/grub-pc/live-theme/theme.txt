@@ -1,0 +1,51 @@
+# PolarisOS — GRUB boot menu theme (800x600)
+desktop-image: "../splash.png"
+title-text: ""
+message-font: "Unifont Regular 16"
+terminal-font: "Unifont Regular 16"
+
+# Boot menu
++ boot_menu {
+        left = 20%
+        width = 60%
+        top = 46%
+        height = 38%
+        item_font = "Unifont Regular 16"
+        item_color = "#b8c4d8"
+        selected_item_font = "Unifont Regular 16"
+        selected_item_color = "#ffffff"
+        item_height = 20
+        item_padding = 4
+        item_spacing = 4
+        icon_width = 0
+        icon_height = 0
+        item_icon_space = 0
+        scrollbar = false
+}
+
+# Countdown
++ progress_bar {
+        id = "__timeout__"
+        left = 20%
+        width = 60%
+        top = 100%-62
+        height = 16
+        font = "Unifont Regular 16"
+        text_color = "#ffffff"
+        fg_color = "#3d8bd9"
+        bg_color = "#0e2e54"
+        border_color = "#3d8bd9"
+        text = "@TIMEOUT_NOTIFICATION_LONG@"
+}
+
+# Help bar
++ label {
+        top = 100%-34
+        left = 0
+        width = 100%
+        height = 20
+        align = "center"
+        color = "#8ea3c4"
+        font = "Unifont Regular 16"
+        text = "Enter: boot   E: edit   C: command line   Esc: back"
+}
