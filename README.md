@@ -68,6 +68,59 @@ PolarisOS protege esas libertades de dos maneras:
   antiguos del mundo, mantenido por una comunidad de voluntarios y guiado por
   su propio compromiso con el software libre.
 
+## Linux en pocas palabras
+
+¿Primera vez con Linux? Estos son los conceptos básicos para entender PolarisOS.
+
+### Conceptos clave
+
+| Concepto | Qué es | En PolarisOS |
+|---|---|---|
+| **Kernel** | El núcleo del sistema: habla con el hardware (procesador, memoria, discos, red). "Linux" es, estrictamente, el nombre del kernel | Kernel Linux de Debian 13, firmado para Secure Boot |
+| **Distribución** | Un sistema completo listo para usar: kernel + herramientas + escritorio + aplicaciones + forma de instalar programas | PolarisOS, basada en Debian |
+| **Entorno de escritorio** | La interfaz gráfica: ventanas, panel, menú, fondo de pantalla | Xfce |
+| **Gestor de paquetes** | Instala, actualiza y desinstala programas de forma segura, resolviendo sus dependencias | `apt` (terminal) y Synaptic (gráfico) |
+| **Repositorio** | Un "almacén" en internet con miles de programas verificados y firmados | Los repositorios oficiales de Debian |
+| **Terminal** | Una ventana donde escribes órdenes en texto; es más rápida para muchas tareas | Xfce Terminal |
+| **root y `sudo`** | `root` es el administrador del sistema. `sudo` permite ejecutar una orden como administrador, pidiendo tu contraseña | Tu usuario puede usar `sudo` |
+| **Sesión live** | El sistema funcionando desde la USB, sin tocar tu disco. Al apagar, los cambios se pierden (salvo que uses persistencia) | Opción por defecto al arrancar la ISO |
+
+### Cómo se organizan los archivos
+
+En Linux no hay letras de unidad como `C:`. Todo cuelga de una sola raíz, `/`:
+
+| Carpeta | Contenido |
+|---|---|
+| `/` | La raíz: el inicio de todo el sistema de archivos |
+| `/home/tu_usuario` | Tus documentos, descargas, música y configuración personal (abreviada como `~`) |
+| `/etc` | Archivos de configuración del sistema |
+| `/usr` | Programas y librerías instalados |
+| `/var` | Datos que cambian: registros, cachés, colas de impresión |
+| `/boot` | El kernel y los archivos de arranque |
+| `/tmp` | Archivos temporales que se borran al reiniciar |
+| `/media` | Donde aparecen tus memorias USB y discos externos |
+
+### Tus primeros comandos
+
+Abre la terminal y prueba:
+
+| Comando | Qué hace |
+|---|---|
+| `pwd` | Muestra en qué carpeta estás |
+| `ls` | Lista los archivos de la carpeta actual |
+| `cd Documentos` | Entra a la carpeta Documentos (`cd ..` sube un nivel, `cd` vuelve a tu carpeta personal) |
+| `sudo apt update` | Actualiza la lista de programas disponibles |
+| `sudo apt upgrade` | Instala las actualizaciones pendientes |
+| `apt search editor` | Busca programas que tengan que ver con "editor" |
+| `sudo apt install vlc` | Instala un programa (en este ejemplo, VLC) |
+| `sudo apt remove vlc` | Lo desinstala |
+| `man ls` | Abre el manual de cualquier comando (sal con `q`) |
+| `htop` | Muestra los procesos y el uso de memoria en tiempo real |
+| `polaris-check` | Verifica la RAM, el firewall, AppArmor, zram y el arranque de PolarisOS |
+
+> 💡 Si prefieres no usar la terminal, abre **Synaptic** desde el menú de
+> aplicaciones: busca el programa, márcalo y pulsa *Apply*.
+
 ## Características
 
 | Requisito | Cómo lo cumple PolarisOS |
