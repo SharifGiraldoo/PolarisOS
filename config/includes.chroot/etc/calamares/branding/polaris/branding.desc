@@ -1,0 +1,41 @@
+---
+# PolarisOS — marca del instalador Calamares
+# Basado en el ejemplo de calamares-settings-debian.
+componentName:  polaris
+
+welcomeStyleCalamares:   true
+welcomeExpandingLogo:    true
+windowExpanding:         normal
+windowSize:              800px,580px
+windowPlacement:         center
+
+strings:
+    productName:         PolarisOS
+    shortProductName:    PolarisOS
+    version:             0.2.0
+    shortVersion:        0.2
+    versionedName:       PolarisOS 0.2
+    shortVersionedName:  PolarisOS 0.2
+    bootloaderEntryName: PolarisOS
+    productUrl:          https://github.com/SharifGiraldoo/PolarisOS
+    supportUrl:          https://github.com/SharifGiraldoo/PolarisOS/issues
+    knownIssuesUrl:      https://github.com/SharifGiraldoo/PolarisOS/issues
+    releaseNotesUrl:     https://github.com/SharifGiraldoo/PolarisOS/releases
+    donateUrl:           https://github.com/SharifGiraldoo/PolarisOS
+
+sidebar: widget
+navigation: widget
+
+images:
+    productLogo:         "logo.png"
+    productIcon:         "logo.png"
+    productWelcome:      "welcome.png"
+
+slideshow:               "show.qml"
+slideshowAPI:            2
+
+style:
+   SidebarBackground:        "#060C26"
+   SidebarText:              "#FFFFFF"
+   SidebarTextCurrent:       "#FFFFFF"
+   SidebarBackgroundCurrent: "#0E2E54"
