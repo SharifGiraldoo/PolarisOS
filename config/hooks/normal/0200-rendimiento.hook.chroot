@@ -1,0 +1,63 @@
+#!/bin/sh
+# =============================================================================
+# PolarisOS — ajustes de rendimiento para equipos con 2 GB de RAM
+# =============================================================================
+set -e
+
+echo "[PolarisOS] Aplicando ajustes de rendimiento..."
+
+# --- 1. zram: swap comprimida en RAM -----------------------------------------
+# Con zstd, 1 GB de zram suele guardar 2-3 GB de datos. Es mucho más rápido
+# que un archivo de swap en disco, sobre todo en discos mecánicos viejos.
+cat > /etc/default/zramswap <<'EOF'
+# PolarisOS: zram con compresión zstd usando hasta el 50 % de la RAM
+ALGO=zstd
+PERCENT=50
+PRIORITY=100
+EOF
+systemctl enable zramswap.service
+
+# Con zram conviene que el kernel use el swap antes que descartar caché
+cat > /etc/sysctl.d/90-polaris-memoria.conf <<'EOF'
+# PolarisOS — gestión de memoria optimizada para zram
+vm.swappiness = 100
+vm.vfs_cache_pressure = 50
+vm.page-cluster = 0
+EOF
+
+# --- 2. earlyoom: evita congelamientos por falta de memoria ------------------
+# Cierra el proceso que más memoria usa cuando quedan < 5 % de RAM y swap,
+# en lugar de dejar que el sistema se congele por minutos.
+# Nota: systemd separa EARLYOOM_ARGS por espacios y no interpreta comillas,
+# por eso las expresiones regulares no llevan espacios (el "." cubre el
+# espacio en "Web Content").
+cat > /etc/default/earlyoom <<'EOF'
+EARLYOOM_ARGS="-m 5 -s 5 -r 3600 --avoid ^(init|systemd|Xorg|lightdm|xfce4-session|xfwm4)$ --prefer ^(firefox-esr|Web.Content|Isolated.Web.Co)$"
+EOF
+systemctl enable earlyoom.service
+
+# --- 3. Limitar el tamaño de los registros del sistema -----------------------
+mkdir -p /etc/systemd/journald.conf.d
+cat > /etc/systemd/journald.conf.d/90-polaris.conf <<'EOF'
+[Journal]
+SystemMaxUse=100M
+RuntimeMaxUse=50M
+EOF
+
+# --- 4. apt: no descargar traducciones de descripciones (ahorra disco y red) --
+cat > /etc/apt/apt.conf.d/90-polaris <<'EOF'
+Acquire::Languages "none";
+EOF
+
+# --- 5. TRIM semanal para discos SSD ------------------------------------------
+systemctl enable fstrim.timer || true
+
+# --- 6. Impresión bajo demanda --------------------------------------------------
+# CUPS no queda corriendo todo el tiempo: systemd lo arranca al primer uso
+# (al imprimir o al abrir la configuración de impresoras).
+if [ -f /lib/systemd/system/cups.service ] || [ -f /usr/lib/systemd/system/cups.service ]; then
+	systemctl disable cups.service
+	systemctl enable cups.socket cups.path
+fi
+
+echo "[PolarisOS] Rendimiento ajustado."
