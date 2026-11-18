@@ -15,6 +15,12 @@
   <img src="docs/img/boot-menu-uefi.png" width="640" alt="Menú de arranque de PolarisOS en UEFI">
 </p>
 
+<p align="center">
+  <img src="docs/img/free-as-in-freedom.png" width="320" alt="Free as in Freedom">
+</p>
+
+<p align="center"><strong>Free as in Freedom</strong></p>
+
 ---
 
 ## Características
