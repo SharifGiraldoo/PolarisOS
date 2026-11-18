@@ -1,0 +1,30 @@
+# -----------------------------------------------------------------------------
+# Seguridad
+# -----------------------------------------------------------------------------
+
+# Firewall (UFW) y su interfaz gráfica
+ufw
+gufw
+
+# Actualizaciones de seguridad automáticas
+unattended-upgrades
+apt-listchanges
+
+# Control de acceso obligatorio (MAC)
+apparmor
+apparmor-profiles
+apparmor-utils
+
+# Microcódigo del procesador (corrige vulnerabilidades de CPU)
+intel-microcode
+amd64-microcode
+
+# -----------------------------------------------------------------------------
+# Rendimiento en equipos con poca RAM
+# -----------------------------------------------------------------------------
+
+# Swap comprimida en RAM
+zram-tools
+
+# Evita que el equipo se congele cuando se agota la memoria
+earlyoom
