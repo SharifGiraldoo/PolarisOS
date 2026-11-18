@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=PolarisOS first-login setup
+Comment=Applies the PolarisOS theme and wallpaper the first time you log in
+Exec=/usr/bin/polaris-first-login
+OnlyShowIn=XFCE;
+NoDisplay=true
+X-GNOME-Autostart-enabled=true

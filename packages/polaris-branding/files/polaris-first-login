@@ -1,0 +1,44 @@
+#!/bin/sh
+# =============================================================================
+# PolarisOS — applies the default look the first time a user logs in to Xfce.
+# Started from /etc/xdg/autostart/polaris-first-login.desktop.
+#
+# Done at first login (instead of fixed files in /etc/skel) because Xfce stores
+# the wallpaper per monitor name, and that name changes on every computer
+# (eDP-1, HDMI-1, Virtual-1...).
+# =============================================================================
+
+MARKER="${XDG_CONFIG_HOME:-$HOME/.config}/polarisos/first-login-done"
+WALLPAPER=/usr/share/backgrounds/polarisos/polarisos-fondo.png
+
+[ -f "$MARKER" ] && exit 0
+command -v xfconf-query >/dev/null 2>&1 || exit 0
+
+# Give xfdesktop and the panel time to start
+sleep 3
+
+# Window, widget and icon themes
+xfconf-query -c xsettings -p /Net/ThemeName     -n -t string -s Greybird
+xfconf-query -c xsettings -p /Net/IconThemeName -n -t string -s Papirus
+xfconf-query -c xfwm4     -p /general/theme     -n -t string -s Greybird
+
+# Wallpaper on every connected monitor and on 4 workspaces
+MONITORS=$(xrandr --listactivemonitors 2>/dev/null | awk 'NR > 1 { print $4 }')
+for monitor in $MONITORS; do
+	for ws in 0 1 2 3; do
+		xfconf-query -c xfce4-desktop \
+			-p "/backdrop/screen0/monitor${monitor}/workspace${ws}/last-image" \
+			-n -t string -s "$WALLPAPER"
+	done
+done
+
+# Live session: the "polaris" user has no known password, so screen locking
+# would lock people out. Disable the screensaver lock only in live mode.
+if grep -qw 'boot=live' /proc/cmdline 2>/dev/null; then
+	xfconf-query -c xfce4-screensaver -p /lock/enabled  -n -t bool -s false
+	xfconf-query -c xfce4-screensaver -p /saver/enabled -n -t bool -s false
+	xfconf-query -c xfce4-power-manager -p /xfce4-power-manager/lock-screen-suspend-hibernate -n -t bool -s false
+fi
+
+mkdir -p "$(dirname "$MARKER")"
+touch "$MARKER"
