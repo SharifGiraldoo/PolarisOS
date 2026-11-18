@@ -1,0 +1,12 @@
+# -----------------------------------------------------------------------------
+# Instalador gráfico Calamares (solo vive en la sesión live; se desinstala
+# automáticamente del sistema instalado)
+# -----------------------------------------------------------------------------
+calamares
+calamares-settings-debian
+
+# Herramientas que usa Calamares para particionar e instalar el arranque
+efibootmgr
+os-prober
+cryptsetup
+keyutils
