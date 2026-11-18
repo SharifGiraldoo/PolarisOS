@@ -1,0 +1,30 @@
+Source: polaris-branding
+Section: misc
+Priority: optional
+Maintainer: Sharif Giraldo <SharifGiraldoo@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://github.com/SharifGiraldoo/PolarisOS
+Vcs-Git: https://github.com/SharifGiraldoo/PolarisOS.git
+Vcs-Browser: https://github.com/SharifGiraldoo/PolarisOS
+
+Package: polaris-branding
+Architecture: all
+Depends: base-files,
+         greybird-gtk-theme,
+         papirus-icon-theme,
+         procps,
+         x11-xserver-utils,
+         xfconf,
+         ${misc:Depends}
+Description: PolarisOS system identity and branding
+ Installs the PolarisOS identity on top of Debian:
+  - its own /usr/lib/os-release (Debian's file is diverted with dpkg-divert
+    so base-files upgrades do not overwrite it)
+  - wallpaper, logo and boot splash artwork
+  - login screen appearance (LightDM)
+  - default theme and icons at the first Xfce login
+  - polaris-check: reports RAM, boot time, firewall, AppArmor and zram
+  - polaris-bluetooth-applet: starts the Bluetooth applet only when
+    Bluetooth hardware is present
