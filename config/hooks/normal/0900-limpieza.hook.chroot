@@ -1,0 +1,16 @@
+#!/bin/sh
+# =============================================================================
+# PolarisOS — limpieza final para reducir el tamaño de la ISO
+# =============================================================================
+set -e
+
+echo "[PolarisOS] Limpiando..."
+
+apt-get clean
+rm -rf /var/lib/apt/lists/*_Translation-* 2>/dev/null || true
+rm -rf /tmp/* /var/tmp/* 2>/dev/null || true
+
+# Los registros generados durante la construcción no deben viajar en la ISO
+find /var/log -type f -exec truncate -s 0 {} + 2>/dev/null || true
+
+echo "[PolarisOS] Limpieza terminada."
