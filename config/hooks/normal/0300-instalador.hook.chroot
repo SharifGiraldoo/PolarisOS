@@ -1,0 +1,31 @@
+#!/bin/sh
+# =============================================================================
+# PolarisOS — personalización del instalador Calamares
+# La carpeta de marca está en config/includes.chroot/etc/calamares/branding/polaris
+# =============================================================================
+set -e
+
+echo "[PolarisOS] Personalizando Calamares..."
+
+BRANDING=/etc/calamares/branding/polaris
+SETTINGS=/etc/calamares/settings.conf
+
+# La presentación (show.qml) es propia y viene en config/includes.chroot
+[ -f "$BRANDING/show.qml" ] || echo "[PolarisOS] AVISO: falta $BRANDING/show.qml" >&2
+
+# Activa la marca de PolarisOS
+if [ -f "$SETTINGS" ]; then
+	sed -i 's/^branding:.*/branding: polaris/' "$SETTINGS"
+fi
+
+# Cambia "Install Debian" por "Install PolarisOS" en el menú y el escritorio
+for f in /usr/share/applications/calamares-install-debian.desktop \
+         /usr/bin/add-calamares-desktop-icon; do
+	if [ -f "$f" ]; then
+		sed -i 's/Name=Install Debian/Name=Install PolarisOS/' "$f"
+		sed -i 's/Installer for Debian Live/PolarisOS Installer/' "$f"
+		sed -i 's/Icon=install-debian/Icon=polarisos-logo/' "$f"
+	fi
+done
+
+echo "[PolarisOS] Calamares personalizado."
