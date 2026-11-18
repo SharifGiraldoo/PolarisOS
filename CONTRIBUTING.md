@@ -20,5 +20,27 @@ Abre un *issue* con:
 - **Ligereza:** la RAM en reposo no debe superar 1024 MB en la sesión live. Todo paquete nuevo
   debe justificarse.
 - **Seguridad:** no se agregan servicios que escuchen en red por defecto.
-- **Mensajes de commit** en español y en modo imperativo:
-  `Agrega soporte para impresoras`, `Corrige el fondo en monitores 4K`.
+- **Mensajes de commit** con [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/):
+  `tipo(ámbito opcional): descripción`, con la descripción en español, en
+  minúscula y en modo imperativo.
+
+## Conventional Commits
+
+| Tipo | Cuándo usarlo | Ejemplo |
+|---|---|---|
+| `feat` | Una función nueva para el usuario | `feat(apps): agrega un lector de PDF` |
+| `fix` | Corrige un error | `fix(arranque): corrige el fondo en monitores 4K` |
+| `perf` | Mejora el rendimiento o el consumo de RAM | `perf(memoria): reduce el tamaño de zram` |
+| `docs` | Solo documentación | `docs(guia): explica cómo probar en VirtualBox` |
+| `build` | live-build, empaquetado o scripts de construcción | `build(live-build): activa la compresión xz` |
+| `ci` | GitHub Actions | `ci: guarda la ISO por 14 días` |
+| `test` | Pruebas (QEMU, verificaciones) | `test: agrega la prueba de Secure Boot` |
+| `refactor` | Cambia código sin cambiar su comportamiento | `refactor(hooks): separa la configuración de UFW` |
+| `chore` | Mantenimiento que no encaja en los anteriores | `chore: actualiza el .gitignore` |
+
+Ámbitos usados en el proyecto: `paquetes`, `escritorio`, `apps`, `seguridad`,
+`hardware`, `instalador`, `arranque`, `branding`, `identidad`, `memoria`,
+`iso`, `herramientas`, `live-build`, `readme`, `release`.
+
+Un cambio que rompe la compatibilidad lleva `!` después del tipo o una línea
+`BREAKING CHANGE:` al final del mensaje: `feat(arranque)!: cambia a systemd-boot`.
