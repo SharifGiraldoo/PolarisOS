@@ -1,0 +1,47 @@
+# --- Resultados de la construcción (las ISO van a GitHub Releases, no a Git) ---
+/salida/
+*.iso
+*.qcow2
+*.img
+build.log
+.build-status
+
+# --- Directorios de trabajo de live-build ---
+/.build/
+/binary/
+/cache/
+/chroot/
+/chroot.files
+/chroot.packages.*
+/binary.modified_timestamps
+/live-image-*
+/*.contents
+/*.files
+/*.packages
+/*.zsync
+
+# Archivos que `lb config` regenera a partir de auto/config
+/config/binary
+/config/bootstrap
+/config/chroot
+/config/common
+/config/source
+
+# El .deb de branding se construye en cada build
+/config/packages.chroot/*.deb
+
+# --- Empaquetado Debian (artefactos de dpkg-buildpackage) ---
+/packages/*.deb
+/packages/*.buildinfo
+/packages/*.changes
+/packages/*/debian/.debhelper/
+/packages/*/debian/debhelper-build-stamp
+/packages/*/debian/files
+/packages/*/debian/*.substvars
+/packages/polaris-branding/debian/polaris-branding/
+
+# --- Varios ---
+__pycache__/
+*.swp
+.vscode/
+.idea/
