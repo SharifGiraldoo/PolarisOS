@@ -31,6 +31,21 @@ y el proyecto usa [versionado semántico](https://semver.org/lang/es/).
 - Hora sincronizada por red (systemd-timesyncd), páginas de manual y htop.
 - Firefox con telemetría desactivada, protección contra rastreo y modo solo HTTPS.
 - Presentación propia del instalador, `/etc/issue` y `/etc/motd` con la marca.
+- **App de bienvenida** (`polaris-welcome`): actualizar, idiomas, driver
+  NVIDIA con inscripción MOK para Secure Boot, Flathub, LibreOffice, Timeshift,
+  firmware y documentación.
+- **Aviso de actualizaciones** con un temporizador de usuario de systemd.
+- **Repositorio APT propio** firmado en GitHub Pages
+  (`polaris-archive-keyring`), para actualizar los paquetes de PolarisOS.
+- **Snapshots** con Timeshift y **actualizaciones de firmware** con fwupd.
+- **Lector de pantalla** Orca desde el menú de arranque.
+- Menú **Whisker** en el panel de Xfce.
+- **Privacidad de red:** MAC aleatoria al buscar redes, MAC estable por red
+  y direcciones IPv6 temporales.
+- **Ediciones Edu y Maker** (`make iso EDICION=...`).
+- **Versión arm64** para equipos ARM con UEFI.
+- CI: **prueba de humo** en QEMU, **SBOM** CycloneDX y **atestaciones de
+  procedencia** en cada release; construcción de las 4 imágenes en paralelo.
 
 ### Corregido
 - `/etc/os-release` mostraba "Debian": live-build lo copiaba como archivo;
