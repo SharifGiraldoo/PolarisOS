@@ -8,6 +8,7 @@ build.log
 
 # --- Directorios de trabajo de live-build ---
 /.build/
+/.trabajo/
 /binary/
 /cache/
 /chroot/
