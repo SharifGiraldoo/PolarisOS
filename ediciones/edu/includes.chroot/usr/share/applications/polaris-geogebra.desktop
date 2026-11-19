@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=GeoGebra
+Comment=Dynamic mathematics for geometry, algebra and graphs (web)
+Exec=xdg-open https://www.geogebra.org/classic
+Icon=applications-science
+Categories=Education;Math;

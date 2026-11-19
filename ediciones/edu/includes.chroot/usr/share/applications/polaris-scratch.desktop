@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Scratch
+Comment=Learn to code by creating stories, games and animations (web)
+Exec=xdg-open https://scratch.mit.edu/projects/editor/
+Icon=applications-education
+Categories=Education;Development;
