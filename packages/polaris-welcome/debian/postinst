@@ -1,0 +1,11 @@
+#!/bin/sh
+# Activa el aviso de actualizaciones para todos los usuarios (unidad de usuario)
+set -e
+
+if [ "$1" = "configure" ]; then
+	systemctl --global enable polaris-update-notifier.timer >/dev/null 2>&1 || true
+fi
+
+#DEBHELPER#
+
+exit 0

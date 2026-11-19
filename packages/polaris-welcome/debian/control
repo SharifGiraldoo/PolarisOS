@@ -1,0 +1,30 @@
+Source: polaris-welcome
+Section: misc
+Priority: optional
+Maintainer: Sharif Giraldo <164926102+SharifGiraldoo@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://github.com/SharifGiraldoo/PolarisOS
+Vcs-Git: https://github.com/SharifGiraldoo/PolarisOS.git
+Vcs-Browser: https://github.com/SharifGiraldoo/PolarisOS
+
+Package: polaris-welcome
+Architecture: all
+Depends: python3,
+         python3-gi,
+         gir1.2-gtk-3.0,
+         libnotify-bin,
+         pciutils,
+         sudo,
+         xfce4-terminal | x-terminal-emulator,
+         ${misc:Depends}
+Recommends: polaris-branding, timeshift, fwupd, mokutil
+Description: PolarisOS welcome app, update notifier and accessibility helper
+ - polaris-welcome: first-login window to update the system, add languages,
+   install the NVIDIA driver, enable Flathub, install LibreOffice, set up
+   Timeshift snapshots, update firmware and open the documentation.
+ - polaris-update-notifier: systemd user timer that shows a notification
+   when updates are available.
+ - polaris-a11y: starts the Orca screen reader when the boot option
+   "screen reader" was chosen.

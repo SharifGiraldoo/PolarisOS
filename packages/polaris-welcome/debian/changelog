@@ -1,0 +1,5 @@
+polaris-welcome (0.2.0) trixie; urgency=medium
+
+  * Initial release: welcome app, update notifier and screen reader helper.
+
+ -- Sharif Giraldo <164926102+SharifGiraldoo@users.noreply.github.com>  Thu, 19 Nov 2026 09:00:00 -0500

@@ -1,0 +1,8 @@
+files/polaris-welcome                  usr/bin/
+files/polaris-update-notifier          usr/bin/
+files/polaris-a11y                     usr/bin/
+files/polaris-welcome.desktop          usr/share/applications/
+files/polaris-welcome-autostart.desktop etc/xdg/autostart/
+files/polaris-a11y.desktop             etc/xdg/autostart/
+files/polaris-update-notifier.service  usr/lib/systemd/user/
+files/polaris-update-notifier.timer    usr/lib/systemd/user/
