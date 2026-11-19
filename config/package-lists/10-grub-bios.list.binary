@@ -6,4 +6,6 @@
 # GRUB para BIOS y GRUB para UEFI van en archivos separados (entran en
 # conflicto si se piden juntos).
 # -----------------------------------------------------------------------------
+#if ARCHITECTURE amd64
 grub-pc
+#endif
