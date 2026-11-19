@@ -1,0 +1,15 @@
+#!/bin/sh
+# =============================================================================
+# PolarisOS Maker — acceso al puerto serie para Arduino y ESP32
+# =============================================================================
+set -e
+
+# Usuarios creados por el instalador: agrega el grupo dialout (puertos serie)
+USERS_CONF=/etc/calamares/modules/users.conf
+if [ -f "$USERS_CONF" ] && ! grep -q '^ *- dialout$' "$USERS_CONF"; then
+	sed -i 's/^\(defaultGroups:\)$/\1\n    - dialout/' "$USERS_CONF"
+fi
+
+mkdir -p /etc/polarisos
+echo "maker" > /etc/polarisos/edition
+echo "[PolarisOS] Edición: Maker (grupo dialout para el instalador)"
