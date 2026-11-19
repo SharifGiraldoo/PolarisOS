@@ -29,6 +29,7 @@
 - [Free as in Freedom](#free-as-in-freedom)
 - [Linux en pocas palabras](#linux-en-pocas-palabras)
 - [Características](#características)
+- [Ediciones](#ediciones)
 - [Probar PolarisOS sin instalar](#probar-polarisos-sin-instalar)
 - [Construir desde el código](#construir-desde-el-código)
 - [Contribuir](#contribuir)
@@ -137,11 +138,29 @@ Abre la terminal y prueba:
 | Requisito | Cómo lo cumple PolarisOS |
 |---|---|
 | **Ligera** (≤ 2 GB de RAM) | XFCE sin extras, `--apt-recommends false`, zram con zstd, earlyoom y servicios bajo demanda. Meta: ≤ 1 GB en reposo (sesión live) |
-| **Funciona en muchos equipos** | Arranque BIOS y UEFI, firmware para Wi-Fi y gráficos comunes, microcódigo Intel/AMD |
+| **Funciona en muchos equipos** | PC de 64 bits (BIOS y UEFI) y equipos ARM64 con UEFI; firmware para Wi-Fi y gráficos comunes, microcódigo Intel/AMD, driver NVIDIA en un clic |
 | **Interfaz gráfica** | Escritorio XFCE, LightDM, pantalla de arranque Plymouth e instalador gráfico Calamares |
 | **ISO profesional** | Menú de arranque propio (BIOS y UEFI) con gráficos seguros, carga en RAM, persistencia, verificación del medio, prueba de memoria e idiomas; inglés por defecto |
 | **Instalar paquetes** | `apt` + Synaptic, con acceso a los repositorios completos de Debian; impresión, Bluetooth y códecs multimedia incluidos |
-| **Segura y confiable** | Secure Boot, UFW activo, AppArmor, actualizaciones de seguridad automáticas, endurecimiento del kernel y ISO verificable con SHA256 + GPG |
+| **Segura y confiable** | Secure Boot, UFW activo, AppArmor, actualizaciones de seguridad automáticas, endurecimiento del kernel, MAC aleatoria en Wi-Fi, snapshots con Timeshift y firmware al día con fwupd |
+| **Verificable** | ISO con SHA256 + GPG, atestación de procedencia de GitHub, SBOM CycloneDX y prueba de arranque automática en cada versión |
+| **Fácil de empezar** | App de bienvenida (actualizar, idiomas, drivers, Flathub, LibreOffice), aviso de actualizaciones y lector de pantalla Orca desde el menú de arranque |
+| **Siempre al día** | Repositorio APT propio y firmado: las mejoras de PolarisOS llegan con `apt upgrade` |
+
+<p align="center">
+  <img src="docs/img/welcome-app.png" width="640" alt="App de bienvenida de PolarisOS">
+</p>
+
+## Ediciones
+
+| Edición | Para quién | Incluye además |
+|---|---|---|
+| **PolarisOS** | Uso general | — |
+| **PolarisOS Edu** | Colegios y niños | GCompris, Tux Paint, Klavaro, accesos a Scratch y GeoGebra, DNS familiar |
+| **PolarisOS Maker** | Electrónica y robótica | Arduino IDE, Thonny, esptool, KiCad, monitor serie y acceso a puertos serie |
+
+Todas las ediciones existen para PC de 64 bits (`amd64`); la edición estándar
+también para ARM de 64 bits (`arm64`).
 
 ## Requisitos mínimos
 
@@ -170,6 +189,7 @@ Descarga la última ISO desde **[Releases](https://github.com/SharifGiraldoo/Pol
 ```bash
 sha256sum -c SHA256SUMS --ignore-missing
 gpg --verify SHA256SUMS.asc SHA256SUMS
+gh attestation verify polarisos-*.iso --repo SharifGiraldoo/PolarisOS
 ```
 
 ## Construir desde el código
@@ -179,6 +199,7 @@ git clone https://github.com/SharifGiraldoo/PolarisOS.git
 cd PolarisOS
 sudo apt install podman make qemu-system-x86 qemu-utils ovmf
 make iso            # construye la ISO en un contenedor Debian 13
+make iso EDICION=edu   # o EDICION=maker
 make probar-uefi    # la prueba en una máquina virtual con 2 GB de RAM
 ```
 
@@ -189,15 +210,20 @@ Escribe `make` para ver todas las tareas disponibles.
 ## Estructura del repositorio
 
 ```
-auto/                     configuración de live-build (lb config / build / clean)
-config/package-lists/     paquetes que lleva la ISO
-config/hooks/normal/      ajustes de seguridad, rendimiento e instalador
-config/includes.chroot/   archivos que se copian tal cual al sistema
-packages/polaris-branding paquete Debian con la identidad de PolarisOS
-scripts/                  construir, probar en QEMU y firmar releases
-assets/                   generador del arte (logo y fondos)
-.github/workflows/        integración continua y publicación de releases
-docs/                     documentación
+auto/                       configuración de live-build (lb config / build / clean)
+config/package-lists/       paquetes que lleva la ISO
+config/hooks/normal/        ajustes de identidad, seguridad, rendimiento e instalador
+config/bootloaders/grub-pc/ menú de arranque (BIOS y UEFI)
+config/includes.chroot/     archivos que se copian tal cual al sistema
+ediciones/                  ediciones Edu y Maker
+packages/polaris-branding   identidad de PolarisOS y polaris-check
+packages/polaris-welcome    app de bienvenida, aviso de actualizaciones y accesibilidad
+packages/polaris-archive-keyring  llave y origen del repositorio APT propio
+repo/                       llave pública del repositorio APT
+scripts/                    construir, probar en QEMU, prueba de humo, SBOM y releases
+assets/                     generador del arte (logo y fondos)
+.github/workflows/          integración continua, releases y repositorio APT
+docs/                       documentación
 ```
 
 ## Contribuir
