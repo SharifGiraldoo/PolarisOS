@@ -20,6 +20,7 @@ gstreamer1.0-plugins-ugly
 gstreamer1.0-libav
 
 # Utilidades
+timeshift
 galculator
 gnome-disk-utility
 gparted
