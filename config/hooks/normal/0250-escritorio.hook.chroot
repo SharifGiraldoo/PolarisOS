@@ -58,4 +58,15 @@ if [ -f "$APPLET" ]; then
 	sed -i 's|^Exec=.*|Exec=/usr/bin/polaris-bluetooth-applet|' "$APPLET"
 fi
 
+# --- 3. Menú Whisker en el panel (búsqueda y favoritos) ----------------------
+# Reemplaza el menú clásico de aplicaciones en la configuración por defecto
+# del panel que reciben los usuarios nuevos.
+for PANEL in /etc/xdg/xfce4/panel/default.xml \
+             /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml; do
+	if [ -f "$PANEL" ] && grep -q '"applicationsmenu"' "$PANEL"; then
+		sed -i 's/"applicationsmenu"/"whiskermenu"/' "$PANEL"
+		echo "[PolarisOS] Menú Whisker activado en $PANEL"
+	fi
+done
+
 echo "[PolarisOS] Arranque gráfico y escritorio configurados."
