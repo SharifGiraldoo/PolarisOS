@@ -1,0 +1,375 @@
+#!/usr/bin/python3
+# =============================================================================
+# PolarisOS Welcome — first steps after installing (or trying) PolarisOS.
+#
+#   polaris-welcome              open the window
+#   polaris-welcome --autostart  open only on the first login (used at login)
+#   polaris-welcome --update     open and start a system update right away
+#                                (used by polaris-update-notifier)
+#
+# Every action runs in a visible terminal, so the user always sees what is
+# being installed and types the password there (sudo).
+# =============================================================================
+import os
+import shlex
+import shutil
+import subprocess
+import sys
+
+import gi
+
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, Gdk, GdkPixbuf, GLib  # noqa: E402
+
+APP_ID = "org.polarisos.Welcome"
+LOGO = "/usr/share/pixmaps/polarisos-logo.png"
+REPO = "https://github.com/SharifGiraldoo/PolarisOS"
+CONFIG_DIR = os.path.join(GLib.get_user_config_dir(), "polarisos")
+SHOWN_MARKER = os.path.join(CONFIG_DIR, "welcome-shown")
+AUTOSTART_MARKER = os.path.join(CONFIG_DIR, "welcome-autostart")
+
+# Language packs offered in "Language support": label -> (locale, Firefox, spell checker)
+LANGUAGES = {
+    "Español (España)": ("es_ES.UTF-8", "firefox-esr-l10n-es-es", "hunspell-es"),
+    "Español (México / Latinoamérica)": ("es_MX.UTF-8", "firefox-esr-l10n-es-mx", "hunspell-es"),
+    "Português (Brasil)": ("pt_BR.UTF-8", "firefox-esr-l10n-pt-br", "hunspell-pt-br"),
+    "Français": ("fr_FR.UTF-8", "firefox-esr-l10n-fr", "hunspell-fr"),
+    "Deutsch": ("de_DE.UTF-8", "firefox-esr-l10n-de", "hunspell-de-de"),
+    "English (United States)": ("en_US.UTF-8", None, "hunspell-en-us"),
+}
+
+UPDATE_CMD = "sudo apt update && sudo apt full-upgrade"
+
+FLATHUB_CMD = (
+    "sudo apt update && sudo apt install -y flatpak && "
+    "sudo flatpak remote-add --if-not-exists flathub "
+    "https://dl.flathub.org/repo/flathub.flatpakrepo && "
+    "echo && echo 'Flathub is ready. Log out and log in again to see Flatpak apps in the menu.'"
+)
+
+OFFICE_CMD = (
+    "sudo apt update && sudo apt install -y "
+    "libreoffice-writer libreoffice-calc libreoffice-impress libreoffice-gtk3"
+)
+
+FIRMWARE_CMD = "sudo fwupdmgr refresh --force; sudo fwupdmgr get-updates && sudo fwupdmgr update"
+
+NVIDIA_CMD = r"""
+set -e
+sudo apt update
+sudo apt install -y nvidia-detect
+nvidia-detect || true
+pkg=$(nvidia-detect 2>/dev/null | grep -o 'nvidia-[a-z0-9-]*driver' | head -n 1)
+pkg=${pkg:-nvidia-driver}
+echo
+echo "Installing $pkg..."
+sudo apt install -y "linux-headers-$(dpkg --print-architecture)" "$pkg" firmware-misc-nonfree
+if mokutil --sb-state 2>/dev/null | grep -qi enabled; then
+    echo
+    echo "Secure Boot is enabled. The NVIDIA driver must be signed with a key"
+    echo "that your computer trusts (MOK). Choose a one-time password now; after"
+    echo "restarting, select 'Enroll MOK' and type that same password."
+    sudo mokutil --import /var/lib/dkms/mok.pub
+fi
+echo
+echo "Done. Restart the computer to use the NVIDIA driver."
+"""
+
+
+def is_live_session():
+    try:
+        with open("/proc/cmdline", encoding="utf-8") as f:
+            return "boot=live" in f.read().split()
+    except OSError:
+        return False
+
+
+def os_release():
+    data = {}
+    try:
+        with open("/etc/os-release", encoding="utf-8") as f:
+            for line in f:
+                if "=" in line:
+                    key, value = line.rstrip("\n").split("=", 1)
+                    data[key] = value.strip('"')
+    except OSError:
+        pass
+    return data
+
+
+def edition():
+    try:
+        with open("/etc/polarisos/edition", encoding="utf-8") as f:
+            name = f.read().strip()
+    except OSError:
+        name = "standard"
+    return {"edu": "Edu", "maker": "Maker"}.get(name, "")
+
+
+def has_nvidia_gpu():
+    if not shutil.which("lspci"):
+        return False
+    try:
+        out = subprocess.run(["lspci", "-nn"], capture_output=True, text=True, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return any(
+        ("VGA" in line or "3D controller" in line) and "NVIDIA" in line.upper()
+        for line in out.splitlines()
+    )
+
+
+def run_in_terminal(title, command):
+    """Run a shell command in a visible terminal that stays open at the end."""
+    script = (
+        f"{command}\n"
+        "status=$?\n"
+        "echo\n"
+        "if [ $status -eq 0 ]; then echo 'Finished. You can close this window.';"
+        " else echo \"Something went wrong (error $status). Read the messages above.\"; fi\n"
+    )
+    terminal = shutil.which("xfce4-terminal")
+    if terminal:
+        argv = [terminal, "--title", f"PolarisOS — {title}", "--hold", "-x", "bash", "-c", script]
+    else:
+        argv = ["x-terminal-emulator", "-T", f"PolarisOS — {title}", "-e",
+                "bash -c " + shlex.quote(script + "read -r -p 'Press Enter to close' _\n")]
+    subprocess.Popen(argv, start_new_session=True)
+
+
+def launch(*argv):
+    if shutil.which(argv[0]):
+        subprocess.Popen(list(argv), start_new_session=True)
+        return True
+    return False
+
+
+class WelcomeWindow(Gtk.ApplicationWindow):
+    def __init__(self, app, start_update=False):
+        super().__init__(application=app, title="Welcome to PolarisOS")
+        self.set_default_size(900, 640)
+        self.set_position(Gtk.WindowPosition.CENTER)
+        self.set_icon_name("polarisos-logo")
+
+        info = os_release()
+        version = info.get("PRETTY_NAME", "PolarisOS")
+        if edition():
+            version = f"{version} · {edition()} edition"
+
+        root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        self.add(root)
+
+        # --- Header ------------------------------------------------------------
+        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=18)
+        header.get_style_context().add_class("polaris-header")
+        header.set_border_width(22)
+        if os.path.exists(LOGO):
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(LOGO, 72, 72)
+            header.pack_start(Gtk.Image.new_from_pixbuf(pixbuf), False, False, 0)
+        titles = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        title = Gtk.Label(xalign=0)
+        title.set_markup("<span size='xx-large' weight='bold'>Welcome to PolarisOS</span>")
+        subtitle = Gtk.Label(label=f"{version} — lightweight, secure and free as in freedom.", xalign=0)
+        titles.pack_start(title, False, False, 0)
+        titles.pack_start(subtitle, False, False, 0)
+        header.pack_start(titles, True, True, 0)
+        root.pack_start(header, False, False, 0)
+
+        # --- Actions -------------------------------------------------------------
+        grid = Gtk.FlowBox()
+        grid.set_selection_mode(Gtk.SelectionMode.NONE)
+        grid.set_max_children_per_line(3)
+        grid.set_min_children_per_line(3)
+        grid.set_homogeneous(True)
+        grid.set_row_spacing(10)
+        grid.set_column_spacing(10)
+        grid.set_border_width(18)
+
+        actions = []
+        if is_live_session():
+            actions.append(("system-software-install", "Install PolarisOS",
+                            "Copy PolarisOS to this computer's disk.", self.on_install))
+        actions += [
+            ("system-software-update", "Update the system",
+             "Download and install the latest updates.", self.on_update),
+            ("preferences-desktop-locale", "Language support",
+             "Translations for the system, Firefox and the spell checker.", self.on_language),
+            ("video-display", "Graphics drivers",
+             "Install the NVIDIA driver if your computer needs it.", self.on_drivers),
+            ("application-x-addon", "Apps from Flathub",
+             "Enable Flatpak to install thousands of extra apps.", self.on_flathub),
+            ("x-office-document", "Office suite",
+             "Install LibreOffice Writer, Calc and Impress.", self.on_office),
+            ("document-revert", "System snapshots",
+             "Set up Timeshift to go back if an update breaks something.", self.on_snapshots),
+            ("drive-harddisk", "Firmware updates",
+             "Update the BIOS/UEFI and device firmware with fwupd.", self.on_firmware),
+            ("help-browser", "Documentation",
+             "Read the PolarisOS guide and Linux basics.", self.on_docs),
+            ("dialog-warning", "Report a problem",
+             "Tell us what failed so we can fix it.", self.on_report),
+        ]
+        self.nvidia = has_nvidia_gpu()
+        for icon, label, description, callback in actions:
+            button = self.make_card(icon, label, description, callback)
+            if label == "Graphics drivers" and not self.nvidia:
+                button.set_sensitive(False)
+                button.set_tooltip_text("No NVIDIA graphics card was detected. "
+                                        "Intel and AMD graphics work out of the box.")
+            grid.add(button)
+
+        scroller = Gtk.ScrolledWindow()
+        scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroller.add(grid)
+        root.pack_start(scroller, True, True, 0)
+
+        # --- Footer --------------------------------------------------------------
+        footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        footer.set_border_width(14)
+        self.startup = Gtk.CheckButton(label="Show this window every time I log in")
+        self.startup.set_active(os.path.exists(AUTOSTART_MARKER))
+        self.startup.connect("toggled", self.on_startup_toggled)
+        footer.pack_start(self.startup, False, False, 0)
+        close = Gtk.Button(label="Close")
+        close.connect("clicked", lambda *_: self.close())
+        footer.pack_end(close, False, False, 0)
+        root.pack_end(footer, False, False, 0)
+
+        self.apply_css()
+        if start_update:
+            GLib.idle_add(self.on_update)
+
+    @staticmethod
+    def make_card(icon, label, description, callback):
+        button = Gtk.Button()
+        button.get_style_context().add_class("polaris-card")
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        box.set_border_width(10)
+        image = Gtk.Image.new_from_icon_name(icon, Gtk.IconSize.DIALOG)
+        name = Gtk.Label()
+        name.set_markup(f"<b>{GLib.markup_escape_text(label)}</b>")
+        text = Gtk.Label(label=description)
+        text.set_line_wrap(True)
+        text.set_justify(Gtk.Justification.CENTER)
+        text.set_max_width_chars(24)
+        text.get_style_context().add_class("dim-label")
+        for widget in (image, name, text):
+            box.pack_start(widget, False, False, 0)
+        button.add(box)
+        button.connect("clicked", lambda *_: callback())
+        return button
+
+    def apply_css(self):
+        css = b"""
+        .polaris-header { background-image: linear-gradient(to right, #060c26, #0e2e54); }
+        .polaris-header label { color: #ffffff; }
+        .polaris-card { padding: 4px; }
+        """
+        provider = Gtk.CssProvider()
+        provider.load_from_data(css)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+    # --- Callbacks ---------------------------------------------------------------
+    def on_install(self):
+        if not (launch("install-debian") or launch("calamares-launcher") or launch("pkexec", "calamares")):
+            self.message("The installer was not found.")
+
+    def on_update(self):
+        run_in_terminal("Update the system", UPDATE_CMD)
+        return False
+
+    def on_language(self):
+        dialog = Gtk.Dialog(title="Language support", transient_for=self, modal=True)
+        dialog.add_buttons("Cancel", Gtk.ResponseType.CANCEL, "Install", Gtk.ResponseType.OK)
+        area = dialog.get_content_area()
+        area.set_border_width(16)
+        area.set_spacing(10)
+        area.add(Gtk.Label(label="Choose the language for the system, Firefox and spell checking:", xalign=0))
+        combo = Gtk.ComboBoxText()
+        for name in LANGUAGES:
+            combo.append_text(name)
+        combo.set_active(0)
+        area.add(combo)
+        dialog.show_all()
+        response = dialog.run()
+        choice = combo.get_active_text()
+        dialog.destroy()
+        if response != Gtk.ResponseType.OK or not choice:
+            return
+        locale, firefox, spell = LANGUAGES[choice]
+        packages = " ".join(p for p in (firefox, spell) if p)
+        line = f"{locale} UTF-8"
+        command = (
+            f"sudo sed -i 's/^# *{line}/{line}/' /etc/locale.gen && "
+            f"(grep -q '^{line}' /etc/locale.gen || echo '{line}' | sudo tee -a /etc/locale.gen >/dev/null) && "
+            "sudo locale-gen && sudo apt update && "
+            f"sudo apt install -y {packages} && "
+            f"sudo localectl set-locale LANG={locale} && "
+            "echo && echo 'Log out and log in again to use the new language.'"
+        )
+        run_in_terminal("Language support", command)
+
+    def on_drivers(self):
+        run_in_terminal("Graphics drivers", NVIDIA_CMD)
+
+    def on_flathub(self):
+        run_in_terminal("Apps from Flathub", FLATHUB_CMD)
+
+    def on_office(self):
+        run_in_terminal("Office suite", OFFICE_CMD)
+
+    def on_snapshots(self):
+        if not (launch("timeshift-launcher") or launch("pkexec", "timeshift-gtk")):
+            self.message("Timeshift is not installed. Install it with: sudo apt install timeshift")
+
+    def on_firmware(self):
+        run_in_terminal("Firmware updates", FIRMWARE_CMD)
+
+    def on_docs(self):
+        launch("xdg-open", f"{REPO}#readme")
+
+    def on_report(self):
+        launch("xdg-open", f"{REPO}/issues/new")
+
+    def on_startup_toggled(self, button):
+        os.makedirs(CONFIG_DIR, exist_ok=True)
+        if button.get_active():
+            open(AUTOSTART_MARKER, "w", encoding="utf-8").close()
+        elif os.path.exists(AUTOSTART_MARKER):
+            os.remove(AUTOSTART_MARKER)
+
+    def message(self, text):
+        dialog = Gtk.MessageDialog(transient_for=self, modal=True,
+                                   message_type=Gtk.MessageType.INFO,
+                                   buttons=Gtk.ButtonsType.OK, text=text)
+        dialog.run()
+        dialog.destroy()
+
+
+class WelcomeApp(Gtk.Application):
+    def __init__(self, start_update):
+        super().__init__(application_id=APP_ID)
+        self.start_update = start_update
+
+    def do_activate(self):
+        window = self.props.active_window or WelcomeWindow(self, self.start_update)
+        window.show_all()
+        window.present()
+
+
+def main():
+    args = sys.argv[1:]
+    if "--autostart" in args:
+        # Live session: always show it. Installed system: first login, or
+        # every login if the user ticked "Show this window every time".
+        if not is_live_session() and os.path.exists(SHOWN_MARKER) \
+                and not os.path.exists(AUTOSTART_MARKER):
+            return 0
+        os.makedirs(CONFIG_DIR, exist_ok=True)
+        open(SHOWN_MARKER, "w", encoding="utf-8").close()
+    return WelcomeApp(start_update="--update" in args).run([sys.argv[0]])
+
+
+if __name__ == "__main__":
+    sys.exit(main())

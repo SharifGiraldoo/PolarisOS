@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Welcome to PolarisOS
+Comment=Shows the welcome window on the first login
+Exec=polaris-welcome --autostart
+Icon=polarisos-logo
+OnlyShowIn=XFCE;
+NoDisplay=true
+X-GNOME-Autostart-enabled=true

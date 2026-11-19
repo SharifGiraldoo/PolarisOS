@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Welcome to PolarisOS
+GenericName=Welcome
+Comment=First steps: updates, languages, drivers, apps and documentation
+Exec=polaris-welcome
+Icon=polarisos-logo
+Terminal=false
+Categories=System;Settings;
+Keywords=welcome;update;drivers;language;flatpak;polarisos;
