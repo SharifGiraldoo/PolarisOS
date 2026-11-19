@@ -15,6 +15,10 @@ if ! grep -q '^ID=polarisos' /usr/lib/os-release 2>/dev/null; then
 fi
 
 ln -sf ../usr/lib/os-release /etc/os-release
+
+# Edición por defecto (las ediciones Edu y Maker la sobrescriben en sus hooks)
+mkdir -p /etc/polarisos
+[ -f /etc/polarisos/edition ] || echo "standard" > /etc/polarisos/edition
 # shellcheck disable=SC1091
 . /etc/os-release
 echo "[PolarisOS] Identidad: ${PRETTY_NAME}"
