@@ -40,7 +40,8 @@ Abre un *issue* con:
 
 Ámbitos usados en el proyecto: `paquetes`, `escritorio`, `apps`, `seguridad`,
 `hardware`, `instalador`, `arranque`, `branding`, `identidad`, `memoria`,
-`iso`, `herramientas`, `live-build`, `readme`, `release`.
+`iso`, `herramientas`, `live-build`, `readme`, `release`, `bienvenida`,
+`repo`, `ediciones`, `edu`, `maker`, `arm64`, `accesibilidad`, `red`, `ci`.
 
 Un cambio que rompe la compatibilidad lleva `!` después del tipo o una línea
 `BREAKING CHANGE:` al final del mensaje: `feat(arranque)!: cambia a systemd-boot`.
