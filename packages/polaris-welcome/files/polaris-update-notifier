@@ -1,0 +1,29 @@
+#!/bin/sh
+# =============================================================================
+# PolarisOS — tells the user when updates are available.
+# Run by the systemd user timer polaris-update-notifier.timer.
+#
+# Security updates are already installed automatically (unattended-upgrades);
+# this covers everything else. The package lists are refreshed every day by
+# apt-daily.timer, so no root access is needed here.
+# =============================================================================
+
+command -v notify-send >/dev/null 2>&1 || exit 0
+# Not in the live session: nothing there is kept after shutdown.
+grep -qw 'boot=live' /proc/cmdline 2>/dev/null && exit 0
+
+COUNT=$(apt-get -s -o Debug::NoLocking=true dist-upgrade 2>/dev/null | grep -c '^Inst ')
+[ "${COUNT:-0}" -gt 0 ] || exit 0
+
+if [ "$COUNT" -eq 1 ]; then
+	TEXT="1 package can be updated."
+else
+	TEXT="$COUNT packages can be updated."
+fi
+
+ANSWER=$(notify-send --app-name=PolarisOS --icon=system-software-update \
+	--action=update="Update now" --wait "Updates available" "$TEXT")
+
+if [ "$ANSWER" = "update" ]; then
+	exec polaris-welcome --update
+fi

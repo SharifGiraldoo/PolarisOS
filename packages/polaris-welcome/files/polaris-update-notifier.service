@@ -1,0 +1,7 @@
+[Unit]
+Description=PolarisOS: notify about available updates
+Documentation=https://github.com/SharifGiraldoo/PolarisOS
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/polaris-update-notifier

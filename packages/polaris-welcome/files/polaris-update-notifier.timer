@@ -1,0 +1,9 @@
+[Unit]
+Description=PolarisOS: check for updates after login and twice a day
+
+[Timer]
+OnStartupSec=15min
+OnUnitActiveSec=12h
+
+[Install]
+WantedBy=timers.target
