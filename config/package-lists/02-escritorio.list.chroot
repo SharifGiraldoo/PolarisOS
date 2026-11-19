@@ -17,6 +17,8 @@ xfce4-power-manager
 xfce4-pulseaudio-plugin
 xfce4-screenshooter
 xfce4-taskmanager
+xfce4-whiskermenu-plugin
+libnotify-bin
 xfce4-screensaver
 thunar
 thunar-archive-plugin
@@ -28,6 +30,11 @@ plymouth-themes
 # Inicio de sesión
 lightdm
 lightdm-gtk-greeter
+
+# Accesibilidad: lector de pantalla Orca con voz eSpeak NG.
+# Solo se inicia si se elige "screen reader" en el menú de arranque.
+orca
+speech-dispatcher-espeak-ng
 
 # Permisos gráficos (necesario para Synaptic e instalador)
 polkitd
