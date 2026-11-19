@@ -1,11 +1,13 @@
 # =============================================================================
 # PolarisOS — integración continua
 #
-#  - En cada push y pull request: revisa los scripts (shellcheck).
-#  - En cada etiqueta vX.Y.Z (o manualmente): construye la ISO en un
-#    contenedor Debian 13 y, si es una etiqueta, publica un Release con la
-#    ISO y SHA256SUMS. Luego firmas SHA256SUMS en tu equipo con
-#    scripts/firmar-release.sh (la llave privada nunca sube a GitHub).
+#  - En cada push y pull request: revisa los scripts (shellcheck) y Python.
+#  - En cada etiqueta vX.Y.Z (o manualmente): construye las ISO de todas las
+#    ediciones y arquitecturas en contenedores Debian 13, arranca cada ISO
+#    amd64 en QEMU (prueba de humo), genera el SBOM y la atestación de
+#    procedencia, y si es una etiqueta publica un Release con todo.
+#    Luego firmas SHA256SUMS en tu equipo con scripts/firmar-release.sh
+#    (la llave privada nunca sube a GitHub).
 # =============================================================================
 name: Construir ISO
 
@@ -26,31 +28,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Shellcheck
+      - name: Shellcheck y Python
         run: |
           sudo apt-get update -q
           sudo apt-get install -y -q shellcheck
-          shellcheck -x auto/* scripts/*.sh \
-            config/hooks/normal/*.hook.* \
-            packages/polaris-branding/files/polaris-first-login \
-            packages/polaris-branding/files/polaris-check \
-            packages/polaris-branding/files/polaris-bluetooth-applet \
-            packages/polaris-branding/debian/preinst \
-            packages/polaris-branding/debian/postrm
+          make revisar
 
-  construir:
-    name: Construir ISO
-    needs: revisar
-    # Solo en etiquetas de versión o al lanzarlo a mano (tarda ~40 min)
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+  version:
+    name: Comprobar la versión
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
 
       - name: Comprobar que la versión coincide en todo el proyecto
-        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           version="$(cat VERSION)"
           corta="$(echo "$version" | cut -d. -f1,2)"
@@ -58,10 +49,37 @@ jobs:
             || { echo "::error::La etiqueta $GITHUB_REF_NAME no coincide con VERSION ($version)"; exit 1; }
           grep -q "^VERSION_ID=\"$corta\"" packages/polaris-branding/files/os-release \
             || { echo "::error::os-release no tiene VERSION_ID=\"$corta\""; exit 1; }
-          grep -q "^polaris-branding ($version)" packages/polaris-branding/debian/changelog \
-            || { echo "::error::debian/changelog no tiene la versión $version"; exit 1; }
+          for paquete in polaris-branding polaris-welcome; do
+            grep -q "^$paquete ($version)" "packages/$paquete/debian/changelog" \
+              || { echo "::error::packages/$paquete/debian/changelog no tiene la versión $version"; exit 1; }
+          done
           grep -q "version: *$version" config/includes.chroot/etc/calamares/branding/polaris/branding.desc \
             || { echo "::error::branding.desc no tiene la versión $version"; exit 1; }
+
+  construir:
+    name: ISO ${{ matrix.edicion }} (${{ matrix.arch }})
+    needs: [revisar, version]
+    # Solo en etiquetas de versión o al lanzarlo a mano (tarda ~40 min).
+    # "version" se omite fuera de las etiquetas; always() permite seguir.
+    if: >-
+      always() && needs.revisar.result == 'success' &&
+      (needs.version.result == 'success' || needs.version.result == 'skipped') &&
+      (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch')
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { edicion: estandar, arch: amd64, runner: ubuntu-latest }
+          - { edicion: edu,      arch: amd64, runner: ubuntu-latest }
+          - { edicion: maker,    arch: amd64, runner: ubuntu-latest }
+          - { edicion: estandar, arch: arm64, runner: ubuntu-24.04-arm }
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Liberar espacio en disco
         run: |
@@ -83,38 +101,111 @@ jobs:
           docker run --rm --privileged \
             -v "$PWD":/fuente \
             -e POLARIS_VERSION="${{ steps.version.outputs.valor }}" \
+            -e POLARIS_EDICION="${{ matrix.edicion }}" \
+            -e POLARIS_ARCH="${{ matrix.arch }}" \
             -e POLARIS_TRABAJO=/trabajo \
             -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
             debian:trixie bash /fuente/scripts/ci-build.sh
 
       - name: Verificar tamaño (GitHub limita los archivos de un Release a 2 GiB)
         run: |
-          tam=$(stat -c %s salida/*.iso)
-          echo "Tamaño de la ISO: $((tam / 1024 / 1024)) MB"
-          test "$tam" -lt 2147483648
+          for iso in salida/*.iso; do
+            tam=$(stat -c %s "$iso")
+            echo "$(basename "$iso"): $((tam / 1024 / 1024)) MB"
+            test "$tam" -lt 2147483648
+          done
 
-      - name: Guardar ISO como artefacto (7 días)
+      - name: Generar el SBOM (CycloneDX)
+        id: sbom
+        run: |
+          for lista in salida/*.packages; do
+            python3 scripts/generar-sbom.py "$lista"
+          done
+          echo "ruta=$(ls salida/*.cdx.json | head -n 1)" >> "$GITHUB_OUTPUT"
+
+      - name: Preparar QEMU para la prueba de humo
+        if: matrix.arch == 'amd64'
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends qemu-system-x86 xorriso imagemagick
+          # Permite que el usuario del runner use KVM (aceleración por hardware)
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm || true
+
+      - name: Prueba de humo (arrancar la ISO hasta el escritorio)
+        if: matrix.arch == 'amd64'
+        run: ./scripts/prueba-humo.sh "$(ls salida/*.iso)"
+
+      - name: Atestación de procedencia de la ISO
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: salida/*.iso
+
+      - name: Atestación del SBOM
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/attest-sbom@v2
+        with:
+          subject-path: salida/*.iso
+          sbom-path: ${{ steps.sbom.outputs.ruta }}
+
+      - name: Guardar resultados como artefacto
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: polarisos-${{ steps.version.outputs.valor }}
+          name: polarisos-${{ matrix.edicion }}-${{ matrix.arch }}
           path: |
             salida/*.iso
-            salida/SHA256SUMS
+            salida/*.packages
+            salida/*.cdx.json
             salida/*.log
+            salida/prueba-humo/
           retention-days: 7
+          if-no-files-found: warn
+
+  publicar:
+    name: Publicar Release
+    needs: construir
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Descargar las ISO de todas las ediciones
+        uses: actions/download-artifact@v4
+        with:
+          path: salida
+          pattern: polarisos-*
+          merge-multiple: true
+
+      - name: Sumas de verificación de todas las imágenes
+        run: |
+          cd salida
+          sha256sum -- *.iso > SHA256SUMS
+          cat SHA256SUMS
 
       - name: Publicar Release
-        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          name: PolarisOS ${{ steps.version.outputs.valor }}
+          name: PolarisOS ${{ github.ref_name }}
           draft: false
-          prerelease: ${{ startsWith(steps.version.outputs.valor, '0.') }}
+          prerelease: ${{ startsWith(github.ref_name, 'v0.') }}
           files: |
             salida/*.iso
             salida/SHA256SUMS
+            salida/*.cdx.json
+            salida/*.packages
           body: |
-            ## PolarisOS ${{ steps.version.outputs.valor }}
+            ## PolarisOS ${{ github.ref_name }}
+
+            | Imagen | Para quién |
+            |---|---|
+            | `polarisos-<versión>-amd64.iso` | Uso general, PC de 64 bits (BIOS y UEFI) |
+            | `polarisos-edu-<versión>-amd64.iso` | Colegios y niños |
+            | `polarisos-maker-<versión>-amd64.iso` | Electrónica y robótica (Arduino, ESP32, KiCad) |
+            | `polarisos-<versión>-arm64.iso` | Equipos ARM de 64 bits con UEFI |
 
             **Requisitos mínimos:** procesador de 64 bits, 2 GB de RAM, 20 GB de disco.
 
@@ -122,6 +213,8 @@ jobs:
             ```bash
             sha256sum -c SHA256SUMS --ignore-missing
             gpg --verify SHA256SUMS.asc SHA256SUMS
+            gh attestation verify polarisos-*.iso --repo ${{ github.repository }}
             ```
 
+            Cada imagen incluye su SBOM (`.cdx.json`, CycloneDX) y la lista de paquetes (`.packages`).
             Consulta el [CHANGELOG](${{ github.server_url }}/${{ github.repository }}/blob/main/CHANGELOG.md) para ver los cambios.
