@@ -1,5 +1,11 @@
 # GRUB para UEFI, con soporte de Secure Boot (shim y GRUB firmados)
 grub-efi
+shim-signed
+#if ARCHITECTURE amd64
 grub-efi-amd64
 grub-efi-amd64-signed
-shim-signed
+#endif
+#if ARCHITECTURE arm64
+grub-efi-arm64
+grub-efi-arm64-signed
+#endif
