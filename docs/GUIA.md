@@ -23,7 +23,7 @@ publicar.
 9. [Subir el proyecto a GitHub](#parte-9--subir-el-proyecto-a-github)
 10. [Publicar la primera versión](#parte-10--publicar-la-primera-versión-v010)
 11. [Mantenimiento](#parte-11--mantenimiento)
-12. [Siguientes pasos](#parte-12--siguientes-pasos)
+12. [Funciones avanzadas](#parte-12--funciones-avanzadas)
 13. [Solución de problemas](#parte-13--solución-de-problemas)
 
 ---
@@ -153,7 +153,11 @@ ISO, `git diff` y `git log` te dirán qué cambió.
 | `config/bootloaders/grub-pc/` | Menú de arranque: opciones, idiomas, tema y fondo (`splash.png`) | A veces |
 | `config/includes.chroot/` | Archivos copiados tal cual al sistema: diapositivas del instalador, políticas de Firefox, `splash` en GRUB | A veces |
 | `packages/polaris-branding/` | Paquete `.deb` propio: os-release, fondo, logo, tema y el verificador `polaris-check` | Al cambiar la identidad |
-| `scripts/` | Construir, probar en QEMU y firmar releases | Rara vez |
+| `scripts/` | Construir (ISO y paquetes), probar en QEMU, prueba de humo, SBOM, repositorio APT y firmas | Rara vez |
+| `packages/polaris-welcome/` | App de bienvenida, aviso de actualizaciones y lector de pantalla | Al cambiar la app |
+| `packages/polaris-archive-keyring/` | Llave y origen del repositorio APT propio | Rara vez |
+| `ediciones/` | Ediciones Edu y Maker (listas, hooks y archivos extra) | Al crear ediciones |
+| `repo/` | Llave pública del repositorio APT | Una vez |
 | `.github/workflows/` | Integración continua y releases | Rara vez |
 
 ### Decisiones de diseño importantes
@@ -300,6 +304,9 @@ Revisa:
 - [ ] En el menú: **Languages → Español (Latinoamérica)** arranca el escritorio en español
 - [ ] En el menú: **Check disc for defects** termina sin errores
 - [ ] En el menú: **Advanced options → Memory Diagnostic Tool** abre memtest86+
+- [ ] Al entrar al escritorio se abre **Welcome to PolarisOS**
+- [ ] El panel usa el menú Whisker (búsqueda de aplicaciones)
+- [ ] **Start PolarisOS (screen reader)** arranca con el lector de pantalla Orca hablando
 
 > La sesión live usa el usuario `polaris` sin contraseña. Para `sudo` no te
 > pedirá clave en modo live.
@@ -528,7 +535,7 @@ gh pr create --fill                    # el CI revisa los scripts
 |---|---|
 | `VERSION` | la versión completa, por ejemplo `0.2.0` (la leen `make`, los scripts y `auto/config`) |
 | `packages/polaris-branding/files/os-release` | `VERSION_ID="0.2"`, `VERSION`, `PRETTY_NAME` |
-| `packages/polaris-branding/debian/changelog` | nueva entrada arriba (`dch -v 0.2.0` o a mano) |
+| `packages/polaris-branding/debian/changelog` y `packages/polaris-welcome/debian/changelog` | nueva entrada arriba (`dch -v 0.3.0` o a mano) |
 | `config/includes.chroot/etc/calamares/branding/polaris/branding.desc` | `version`, `shortVersion`, `versionedName`, `shortVersionedName` |
 | `CHANGELOG.md` | nueva sección |
 
@@ -554,16 +561,115 @@ y te dice cuál falta. Así no publicas una ISO que diga "0.1" siendo la 0.2.
 
 ---
 
-## Parte 12 — Siguientes pasos
+## Parte 12 — Funciones avanzadas
+
+### 12.1 Ediciones: Edu y Maker
+
+Las ediciones viven en `ediciones/` y se copian encima de `config/` al
+construir. Ver [`ediciones/README.md`](../ediciones/README.md).
+
+```bash
+make iso                 # edición estándar
+make iso EDICION=edu     # colegios: GCompris, Tux Paint, Klavaro, Scratch, GeoGebra, DNS familiar
+make iso EDICION=maker   # electrónica: Arduino IDE, Thonny, esptool, KiCad, puerto serie listo
+make iso-todas           # las tres
+```
+
+La edición instalada queda escrita en `/etc/polarisos/edition`, y
+`polaris-check` la muestra.
+
+### 12.2 Versión ARM de 64 bits (arm64)
+
+`auto/config` usa la arquitectura del equipo que construye (o
+`POLARIS_ARCH`). Las listas de paquetes eligen el kernel y GRUB correctos con
+bloques `#if ARCHITECTURE amd64` / `#if ARCHITECTURE arm64`.
+
+- En GitHub Actions, la ISO arm64 se construye en un runner ARM
+  (`ubuntu-24.04-arm`) en cada release.
+- La imagen arranca en equipos ARM con **UEFI** y en máquinas virtuales
+  (QEMU con AAVMF, UTM en Mac con Apple Silicon).
+- **Raspberry Pi:** arranca con el firmware UEFI de la comunidad
+  (proyecto *Raspberry Pi 4 UEFI Firmware*). Una imagen nativa para el
+  cargador de la Raspberry Pi es un proyecto aparte.
+
+### 12.3 App de bienvenida y avisos de actualización
+
+El paquete `polaris-welcome` agrega:
+
+| Herramienta | Qué hace |
+|---|---|
+| `polaris-welcome` | Ventana del primer inicio: actualizar, idiomas, driver NVIDIA (con inscripción MOK si hay Secure Boot), Flathub, LibreOffice, Timeshift, firmware, documentación |
+| `polaris-update-notifier` | Temporizador de usuario de systemd (15 min después de iniciar sesión y cada 12 h) que avisa si hay actualizaciones |
+| `polaris-a11y` | Inicia el lector de pantalla Orca si se eligió **Start PolarisOS (screen reader)** en el menú de arranque |
+
+Todas las acciones corren en una terminal visible, así el usuario ve qué se
+instala y escribe ahí su contraseña. Ninguna queda en memoria al terminar.
+
+### 12.4 Repositorio APT propio
+
+Con el repositorio propio, los sistemas instalados reciben las mejoras de
+`polaris-branding` y `polaris-welcome` con `apt upgrade`. Se publica en
+GitHub Pages: `https://sharifgiraldoo.github.io/PolarisOS/apt`.
+
+**Configuración (una sola vez):**
+
+1. **Activa GitHub Pages:** en GitHub, **Settings → Pages → Build and
+   deployment → Source: GitHub Actions**.
+2. **Crea la llave del repositorio** en tu equipo:
+   ```bash
+   ./scripts/crear-llave-repo.sh
+   ```
+3. **Guarda la llave privada como secreto** y respáldala fuera del equipo:
+   ```bash
+   gh secret set APT_SIGNING_KEY < ~/polarisos-repo-llave-privada.asc
+   # copia el archivo a una USB cifrada o a tu gestor de contraseñas, luego:
+   shred -u ~/polarisos-repo-llave-privada.asc
+   ```
+4. **Sube la llave pública:**
+   ```bash
+   git add repo/polarisos-archive-keyring.asc
+   git commit -m "feat(repo): agrega la llave pública del repositorio APT"
+   git push
+   ```
+5. Espera a que el workflow **Repositorio APT** termine en verde y abre
+   `https://sharifgiraldoo.github.io/PolarisOS/`.
+
+Desde ese momento, cada ISO incluye `polaris-archive-keyring`, que instala la
+llave y el origen `/etc/apt/sources.list.d/polarisos.sources`.
+
+> ⚠️ Haz los pasos en este orden. Si la llave pública se sube antes de que
+> el repositorio exista en GitHub Pages, la construcción de la ISO falla al
+> ejecutar `apt update` contra un repositorio vacío.
+
+**Publicar una actualización de un paquete:** cambia sus archivos, agrega
+una entrada en su `debian/changelog` con una versión mayor (por ejemplo
+`0.2.1`) y haz push. El workflow publica la versión nueva.
+
+### 12.5 Integración continua: prueba de humo, SBOM y procedencia
+
+En cada release, por cada imagen, GitHub Actions:
+
+1. **Construye** la ISO en un contenedor Debian 13 (4 imágenes en paralelo).
+2. **Prueba de humo** (amd64): arranca la ISO en QEMU sin pantalla, espera
+   a que inicie el escritorio y guarda una captura. Se puede correr en local:
+   ```bash
+   make prueba-humo     # resultado en salida/prueba-humo/
+   ```
+3. **SBOM:** genera `*.cdx.json` (CycloneDX) con cada paquete de la imagen.
+4. **Procedencia:** firma con GitHub una atestación de que la ISO salió de
+   este repositorio y de ese commit. Cualquiera puede verificarla:
+   ```bash
+   gh attestation verify polarisos-0.2.0-amd64.iso --repo SharifGiraldoo/PolarisOS
+   ```
+
+### 12.6 Ideas para el futuro
 
 | Idea | Valor | Dificultad |
 |---|---|---|
-| Repositorio APT propio (`aptly` + GitHub Pages) para enviar actualizaciones de `polaris-branding` y herramientas propias | Alto | Media |
-| App de bienvenida (Python + GTK): actualizar, instalar códecs, activar Flatpak | Alto | Media |
 | Variante LXQt (aún más ligera) | Medio | Baja |
-| Pantalla de arranque con Plymouth y menú GRUB con la marca | Medio | Media |
-| Pruebas automáticas de la ISO con openQA | Alto | Alta |
-| Versión ARM64 (Raspberry Pi) | Alto | Alta |
+| Imagen nativa para Raspberry Pi (sin firmware UEFI) | Alto | Alta |
+| Pruebas de instalación automáticas con openQA | Alto | Alta |
+| Sitio web con descargas y documentación en GitHub Pages | Medio | Baja |
 
 ---
 
