@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+# Convierte la llave pública del repositorio (repo/*.asc, en texto) al formato
+# binario que usa APT en /usr/share/keyrings.
+LLAVE := ../../repo/polarisos-archive-keyring.asc
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	test -f $(LLAVE) || { echo "Falta $(LLAVE): ver docs/GUIA.md (repositorio APT)"; exit 1; }
+	GNUPGHOME=$$(mktemp -d) gpg --batch --yes --dearmor --output polarisos-archive-keyring.gpg $(LLAVE)
+
+override_dh_auto_clean:
+	rm -f polarisos-archive-keyring.gpg

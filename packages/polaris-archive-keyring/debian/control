@@ -1,0 +1,16 @@
+Source: polaris-archive-keyring
+Section: misc
+Priority: optional
+Maintainer: Sharif Giraldo <164926102+SharifGiraldoo@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13), gnupg
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://github.com/SharifGiraldoo/PolarisOS
+
+Package: polaris-archive-keyring
+Architecture: all
+Depends: ${misc:Depends}
+Description: PolarisOS archive key and APT source
+ Installs the public key that signs the PolarisOS APT repository and the
+ APT source (/etc/apt/sources.list.d/polarisos.sources), so installed
+ systems receive updates of the polaris-* packages with apt.

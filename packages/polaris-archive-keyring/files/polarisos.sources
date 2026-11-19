@@ -1,0 +1,7 @@
+# PolarisOS — repositorio propio (actualizaciones de los paquetes polaris-*)
+# Firmado con la llave de /usr/share/keyrings/polarisos-archive-keyring.gpg
+Types: deb
+URIs: https://sharifgiraldoo.github.io/PolarisOS/apt
+Suites: trixie
+Components: main
+Signed-By: /usr/share/keyrings/polarisos-archive-keyring.gpg
