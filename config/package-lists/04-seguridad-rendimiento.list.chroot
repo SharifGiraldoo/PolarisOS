@@ -16,8 +16,16 @@ apparmor-profiles
 apparmor-utils
 
 # Microcódigo del procesador (corrige vulnerabilidades de CPU)
+#if ARCHITECTURE amd64
 intel-microcode
 amd64-microcode
+#endif
+
+# Actualizaciones de firmware (BIOS/UEFI, SSD, etc.); fwupd solo se activa al usarlo
+fwupd
+
+# Inscripción de llaves MOK para drivers firmados con Secure Boot (NVIDIA)
+mokutil
 
 # -----------------------------------------------------------------------------
 # Rendimiento en equipos con poca RAM
