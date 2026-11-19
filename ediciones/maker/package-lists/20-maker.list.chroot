@@ -1,0 +1,22 @@
+# -----------------------------------------------------------------------------
+# PolarisOS Maker — electrónica, robótica y prototipado
+# -----------------------------------------------------------------------------
+
+# Arduino IDE y núcleo para placas AVR (Uno, Nano, Mega)
+arduino
+
+# Python para principiantes, con soporte de MicroPython
+thonny
+
+# Programar ESP8266/ESP32 desde la terminal
+esptool
+
+# Diseño de circuitos y PCB
+kicad
+
+# Monitor de puerto serie y librería Python
+picocom
+python3-serial
+
+# Control de versiones para tus proyectos
+git
