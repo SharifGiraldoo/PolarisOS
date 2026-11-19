@@ -35,3 +35,17 @@ Cada versión publica `SHA256SUMS` y su firma `SHA256SUMS.asc`:
 gpg --verify SHA256SUMS.asc SHA256SUMS
 sha256sum -c SHA256SUMS --ignore-missing
 ```
+
+Además, cada ISO tiene una **atestación de procedencia** de GitHub (prueba
+de que se construyó en GitHub Actions desde este repositorio) y un **SBOM**
+(`.cdx.json`) con todos sus paquetes:
+
+```bash
+gh attestation verify polarisos-<versión>-amd64.iso --repo SharifGiraldoo/PolarisOS
+```
+
+## Repositorio APT
+
+Los paquetes propios se publican firmados con una llave dedicada (ver
+`repo/README.md`). La llave privada solo existe como secreto cifrado de
+GitHub Actions y en un respaldo fuera de línea del mantenedor.
