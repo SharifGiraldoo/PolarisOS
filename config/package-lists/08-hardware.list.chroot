@@ -10,6 +10,12 @@ cups-client
 system-config-printer
 printer-driver-hpcups
 
+# Detección de tarjetas gráficas NVIDIA (la usa la app de bienvenida)
+pciutils
+#if ARCHITECTURE amd64
+nvidia-detect
+#endif
+
 # Bluetooth (bluetooth.service solo arranca si hay adaptador; el applet
 # se lanza con polaris-bluetooth-applet solo si existe hardware)
 bluez
