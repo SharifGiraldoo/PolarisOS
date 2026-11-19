@@ -1,0 +1,99 @@
+# =============================================================================
+# PolarisOS — repositorio APT en GitHub Pages
+#
+# Cada vez que cambian los paquetes propios (packages/), los construye, arma
+# el repositorio firmado con la llave del secreto APT_SIGNING_KEY y lo publica
+# en https://sharifgiraldoo.github.io/PolarisOS/apt
+#
+# Mientras no exista la llave (repo/polarisos-archive-keyring.asc y el secreto),
+# el workflow solo construye los paquetes y avisa qué falta.
+# =============================================================================
+name: Repositorio APT
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/**"
+      - "repo/**"
+      - "scripts/construir-paquetes.sh"
+      - "scripts/publicar-repo.sh"
+      - ".github/workflows/repositorio-apt.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  construir:
+    name: Construir y firmar el repositorio
+    runs-on: ubuntu-latest
+    env:
+      APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
+    outputs:
+      publicar: ${{ steps.llave.outputs.publicar }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Comprobar la llave del repositorio
+        id: llave
+        run: |
+          if [[ -f repo/polarisos-archive-keyring.asc && -n "$APT_SIGNING_KEY" ]]; then
+            echo "publicar=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publicar=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Falta la llave del repositorio (repo/polarisos-archive-keyring.asc o el secreto APT_SIGNING_KEY). Se construyen los paquetes pero no se publican. Ver docs/GUIA.md."
+          fi
+
+      - name: Construir los paquetes en Debian 13
+        run: |
+          docker run --rm -v "$PWD":/fuente -w /fuente \
+            -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" debian:trixie bash -c '
+              apt-get update -q &&
+              apt-get install -y -q --no-install-recommends \
+                build-essential debhelper dpkg-dev fakeroot gnupg &&
+              bash scripts/construir-paquetes.sh salida/paquetes &&
+              chown -R "$HOST_UID:$HOST_GID" salida'
+
+      - name: Firmar y armar el repositorio
+        if: steps.llave.outputs.publicar == 'true'
+        run: |
+          docker run --rm -v "$PWD":/fuente -w /fuente -e APT_SIGNING_KEY \
+            -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" debian:trixie bash -c '
+              apt-get update -q &&
+              apt-get install -y -q --no-install-recommends reprepro gnupg &&
+              bash scripts/publicar-repo.sh salida/paquetes salida/sitio &&
+              chown -R "$HOST_UID:$HOST_GID" salida'
+
+      - name: Guardar los paquetes como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: paquetes-polarisos
+          path: salida/paquetes/*.deb
+          retention-days: 14
+
+      - name: Preparar el sitio para GitHub Pages
+        if: steps.llave.outputs.publicar == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: salida/sitio
+
+  publicar:
+    name: Publicar en GitHub Pages
+    needs: construir
+    if: needs.construir.outputs.publicar == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - name: Desplegar
+        id: despliegue
+        uses: actions/deploy-pages@v4
