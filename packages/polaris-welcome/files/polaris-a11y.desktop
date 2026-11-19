@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=PolarisOS screen reader
+Comment=Starts Orca when the screen reader boot option is used
+Exec=/usr/bin/polaris-a11y
+OnlyShowIn=XFCE;
+NoDisplay=true
+X-GNOME-Autostart-enabled=true

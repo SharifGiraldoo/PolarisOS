@@ -1,0 +1,11 @@
+#!/bin/sh
+# =============================================================================
+# PolarisOS — starts the Orca screen reader when the boot menu option
+# "Start PolarisOS (screen reader)" was chosen (kernel parameter polaris.a11y=1).
+# Costs no memory otherwise: it exits immediately.
+# =============================================================================
+grep -qw 'polaris.a11y=1' /proc/cmdline 2>/dev/null || exit 0
+command -v orca >/dev/null 2>&1 || exit 0
+
+xfconf-query -c xfce4-session -p /general/StartAssistiveTechnologies -n -t bool -s true 2>/dev/null
+exec orca --replace
