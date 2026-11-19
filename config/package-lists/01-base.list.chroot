@@ -3,8 +3,13 @@
 # Con --apt-recommends false, lo que no esté aquí NO se instala.
 # -----------------------------------------------------------------------------
 
-# Kernel firmado de Debian (necesario para Secure Boot)
+# Kernel firmado de Debian (necesario para Secure Boot), según la arquitectura
+#if ARCHITECTURE amd64
 linux-image-amd64
+#endif
+#if ARCHITECTURE arm64
+linux-image-arm64
+#endif
 
 # Modo live
 live-boot
